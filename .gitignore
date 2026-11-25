@@ -1,0 +1,15 @@
+node_modules/
+dist/
+build/
+.pnpm-store/
+.cache/
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+tmp/
+
+.ofm-data/
+release/
+vendor/dsh-our-free-model/
