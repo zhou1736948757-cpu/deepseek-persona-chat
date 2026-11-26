@@ -3,182 +3,1367 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#08090C" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 72 72'%3E%3Crect width='72' height='72' rx='18' fill='%23151926'/%3E%3Cpath d='M36 10L42 30L62 36L42 42L36 62L30 42L10 36L30 30L36 10Z' fill='%23F9FAFB'/%3E%3Ccircle cx='53' cy='19' r='5' fill='%235686FE'/%3E%3C/svg%3E" />
 <title>DeepSeek Persona — 把深爱的 Ta 接回本地</title>
-<meta name="description" content="开源免费本地 AI 情感陪伴客户端：内置 25+ 免费模型、24 题 MBTI 捏人、旧聊天记录导入与本地 Raw RAG 记忆、CC-Switch 换模型不换灵魂、3-15 秒声音克隆、Windows 一键安装。" />
+<meta name="description" content="开源免费本地 AI 人格对话桌面与应用：内置 25+ 免费模型、24 题深度人格问卷 + MBTI、旧聊天记录一键导入与本地 Raw RAG 记忆、CC-Switch 换模型不换灵魂、自定义声音克隆、Windows 一键安装。" />
 <style>
+  :root {
+    --bg: #08090C;
+    --bg-elev: #0F1117;
+    --bg-card: rgba(18, 21, 30, 0.72);
+    --bg-card-hover: rgba(24, 28, 40, 0.90);
+    --border: rgba(255, 255, 255, 0.09);
+    --border-strong: rgba(86, 134, 254, 0.36);
+    --text: #F5F7FB;
+    --text-2: #A7B0C0;
+    --text-3: #6F7889;
+    --accent: #5686FE;
+    --accent-hover: #6D98FF;
+    --accent-soft: rgba(86, 134, 254, 0.14);
+    --mint: #34D399;
+    --amber: #FBBF24;
+    --radius-xl: 24px;
+    --radius-lg: 18px;
+    --radius-md: 12px;
+    --max-w: 1140px;
+  }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body {
-    width: 100%; height: 100%; overflow: hidden;
-    background: #08090C; color: #F9FAFB;
-    font-family: "MiSans", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+  html { scroll-behavior: smooth; background: var(--bg); color: var(--text); }
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(ellipse 80% 42% at 50% -8%, rgba(86, 134, 254, 0.18), transparent 68%),
+      radial-gradient(ellipse 55% 32% at 88% 18%, rgba(99, 102, 241, 0.10), transparent 65%),
+      var(--bg);
+    color: var(--text);
+    font-family: "PingFang SC", "Hiragino Sans", "Apple SD Gothic Neo", "Microsoft YaHei", "Yu Gothic", "Malgun Gothic", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
-    user-select: none;
+    overflow-x: hidden;
   }
 
-  #stage-wrap {
-    position: fixed; inset: 0;
-    display: flex; align-items: center; justify-content: center;
-    background: #08090C; overflow: hidden;
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; }
+
+  .container {
+    width: 100%;
+    max-width: var(--max-w);
+    margin: 0 auto;
+    padding: 0 24px;
   }
 
-  #frame-box {
+  /* Header */
+  .nav-wrap {
+    position: sticky;
+    top: 0;
+    z-index: 60;
+    padding-top: env(safe-area-inset-top, 0px);
+    background: rgba(8, 9, 12, 0.78);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .nav {
+    height: 68px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: -0.02em;
+    flex-shrink: 0;
+  }
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: linear-gradient(145deg, #1E2436, #141722);
+    border: 1px solid rgba(86, 134, 254, 0.45);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 20px rgba(86, 134, 254, 0.20);
+  }
+  .brand span { color: var(--accent); }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    font-size: 14px;
+    color: var(--text-2);
+  }
+  .nav-links a { transition: color 0.18s ease; }
+  .nav-links a:hover { color: var(--text); }
+
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .lang-switch {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+  }
+  .lang-btn {
+    border: none;
+    background: transparent;
+    color: var(--text-2);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+  }
+  .lang-btn:hover { color: var(--text); }
+  .lang-btn.active {
+    background: var(--accent);
+    color: #FFF;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(86, 134, 254, 0.35);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+  }
+  .btn:hover { background: rgba(255, 255, 255, 0.10); border-color: rgba(255, 255, 255, 0.20); transform: translateY(-1px); }
+  .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #FFF;
+    box-shadow: 0 10px 30px rgba(86, 134, 254, 0.32);
+  }
+  .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  .btn-lg { padding: 14px 26px; font-size: 15px; }
+  .btn-sm { padding: 7px 14px; font-size: 13px; }
+
+  /* Hero */
+  .hero {
+    padding: 76px 0 56px;
+    text-align: center;
+  }
+  .badge-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    border: 1px solid var(--border-strong);
+    color: #CFE0FF;
+    font-size: 12.5px;
+    font-weight: 500;
+    margin-bottom: 24px;
+  }
+  .badge-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--mint);
+    box-shadow: 0 0 10px var(--mint);
+  }
+  .hero h1 {
+    font-size: clamp(32px, 5.4vw, 60px);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    max-width: 980px;
+    margin: 0 auto 20px;
+    text-wrap: balance;
+    background: linear-gradient(180deg, #FFFFFF 28%, #B9C8EA 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  html[lang="ko"] { word-break: keep-all; }
+  html[lang="ja"] h1, html[lang="ja"] h2 { word-break: auto-phrase; }
+  .hero-sub {
+    font-size: clamp(15px, 2vw, 19px);
+    color: var(--text-2);
+    max-width: 720px;
+    margin: 0 auto 32px;
+    line-height: 1.7;
+  }
+  .hero-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 34px;
+  }
+  .trust-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px 22px;
+    color: var(--text-3);
+    font-size: 13px;
+  }
+  .trust-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .trust-item b { color: var(--text-2); font-weight: 600; }
+
+  /* Embedded 60fps 3D Showcase Section */
+  .section {
+    padding: 56px 0;
+  }
+  .section-head {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  .eyebrow {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+  .section-head h2 {
+    font-size: clamp(26px, 4vw, 40px);
+    font-weight: 750;
+    letter-spacing: -0.025em;
+    margin-bottom: 12px;
+  }
+  .section-head p {
+    font-size: 15.5px;
+    color: var(--text-2);
+    max-width: 660px;
+    margin: 0 auto;
+  }
+
+  .cinema-shell {
+    background: #0D0F15;
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: 0 28px 90px rgba(0, 0, 0, 0.65);
+  }
+  .cinema-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(16, 19, 28, 0.85);
+    flex-wrap: wrap;
+  }
+  .cinema-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .cinema-dots i {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: block;
+    background: rgba(255, 255, 255, 0.16);
+  }
+  .cinema-dots i:nth-child(1) { background: #FF5F56; }
+  .cinema-dots i:nth-child(2) { background: #FFBD2E; }
+  .cinema-dots i:nth-child(3) { background: #27C93F; }
+  .cinema-label {
+    font-size: 12.5px;
+    color: var(--text-2);
+    margin-left: 8px;
+  }
+  .cinema-bar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .mini-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    font-size: 12px;
+    color: var(--text-2);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  .mini-pill:hover { color: #FFF; border-color: rgba(255, 255, 255, 0.22); }
+
+  .stage-viewport {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #06070A;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .stage-viewport.portrait {
+    aspect-ratio: 9 / 14;
+    max-height: 76vh;
+  }
+  #stage-box {
     position: relative;
     overflow: hidden;
-    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.85);
     background: #08090C;
   }
-
   #cinema-frame {
-    position: absolute; left: 0; top: 0;
-    border: 0; transform-origin: 0 0;
+    position: absolute;
+    left: 0;
+    top: 0;
+    border: 0;
+    transform-origin: 0 0;
     pointer-events: none;
   }
-
-  /* Top-right minimal brand / download action bar */
-  .top-actions {
-    position: fixed; top: 18px; right: 20px; z-index: 40;
-    display: flex; align-items: center; gap: 10px;
+  .stage-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    text-align: center;
+    background: radial-gradient(ellipse 68% 60% at 50% 45%, rgba(20, 26, 42, 0.50), rgba(8, 9, 12, 0.80) 76%);
+    backdrop-filter: blur(4px);
+    transition: opacity 0.35s ease, visibility 0.35s ease;
   }
-  .pill-btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 8px 14px; border-radius: 999px;
-    font-size: 13px; font-weight: 500; text-decoration: none; cursor: pointer;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    background: rgba(21, 21, 23, 0.78); backdrop-filter: blur(14px);
-    color: #E5E7EB; transition: all 0.18s ease;
-  }
-  .pill-btn:hover { background: rgba(44, 44, 46, 0.92); border-color: rgba(255, 255, 255, 0.25); color: #FFF; }
-  .pill-btn.primary {
-    background: #5686FE; border-color: #5686FE; color: #FFF; font-weight: 600;
-  }
-  .pill-btn.primary:hover { background: #679EFE; border-color: #679EFE; }
-
-  /* Start Cinema Curtain (required for browser autoplay-with-audio policy) */
-  #start-curtain {
-    position: fixed; inset: 0; z-index: 50;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 28px; text-align: center;
-    background: radial-gradient(ellipse 70% 60% at 50% 42%, rgba(28, 34, 52, 0.72), rgba(8, 9, 12, 0.94) 72%);
-    backdrop-filter: blur(16px);
-    transition: opacity 0.45s ease, visibility 0.45s ease;
-  }
-  #start-curtain.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-  .emblem {
-    width: 68px; height: 68px; border-radius: 19px;
-    background: #1B1C22; border: 1px solid rgba(86, 134, 254, 0.45);
-    display: flex; align-items: center; justify-content: center; margin-bottom: 22px;
-  }
-  .start-title { font-size: clamp(32px, 5vw, 54px); font-weight: 700; letter-spacing: -0.025em; }
-  .start-title span { color: #5686FE; }
-  .start-sub { font-size: clamp(14px, 2vw, 18px); color: #ADB2B8; margin-top: 10px; max-width: 560px; line-height: 1.6; }
-  .start-play {
-    margin-top: 28px; padding: 14px 32px; border-radius: 999px; border: none;
-    background: #5686FE; color: #FFFFFF; font-size: 16px; font-weight: 600;
-    cursor: pointer; display: inline-flex; align-items: center; gap: 10px;
-    box-shadow: 0 12px 34px rgba(86, 134, 254, 0.35);
+  .stage-overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+  .play-big {
+    padding: 14px 28px;
+    border-radius: 999px;
+    border: none;
+    background: var(--accent);
+    color: #FFF;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 12px 34px rgba(86, 134, 254, 0.45);
     transition: transform 0.18s ease, background 0.18s ease;
   }
-  .start-play:hover { background: #679EFE; transform: translateY(-1px); }
-  .start-meta { margin-top: 14px; font-size: 12.5px; color: #81858C; }
-  .start-links { margin-top: 26px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .play-big:hover { background: var(--accent-hover); transform: scale(1.03); }
+  .overlay-hint {
+    margin-top: 12px;
+    font-size: 12.5px;
+    color: #CBD5E1;
+  }
 
-  /* Bottom Cinema Scrubber Bar */
-  #controls {
-    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 40;
-    width: min(760px, calc(100vw - 24px));
-    padding: 10px 16px; border-radius: 16px;
-    background: rgba(21, 21, 23, 0.80); backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    display: flex; flex-direction: column; gap: 8px;
-    transition: opacity 0.25s ease;
+  .cinema-controls {
+    padding: 12px 18px 14px;
+    background: rgba(14, 17, 25, 0.94);
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
   }
-  .ctrl-row { display: flex; align-items: center; gap: 12px; }
+  .ctrl-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
   .ctrl-btn {
-    border: none; background: transparent; color: #F9FAFB; font-size: 14px;
-    cursor: pointer; padding: 4px 8px; border-radius: 8px;
+    border: none;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text);
+    width: 34px;
+    height: 30px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
   }
-  .ctrl-btn:hover { background: rgba(255, 255, 255, 0.08); }
+  .ctrl-btn:hover { background: rgba(255, 255, 255, 0.14); }
   .scrub {
-    flex: 1; height: 5px; border-radius: 99px; background: rgba(255, 255, 255, 0.14);
-    cursor: pointer; position: relative; overflow: hidden;
+    flex: 1;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+    cursor: pointer;
+    overflow: hidden;
   }
-  .scrub-fill { height: 100%; width: 0%; background: #5686FE; border-radius: 99px; }
-  .tc { font-family: "Cascadia Code", monospace; font-size: 12px; color: #ADB2B8; min-width: 82px; text-align: right; }
-  .chapters { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+  .scrub-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent), #85A8FF);
+    border-radius: 999px;
+  }
+  .tc {
+    font-family: ui-monospace, "Cascadia Code", monospace;
+    font-size: 12px;
+    color: var(--text-2);
+    min-width: 84px;
+    text-align: right;
+  }
+  .chapters {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
   .chapters::-webkit-scrollbar { display: none; }
   .ch-pill {
-    padding: 3px 9px; border-radius: 999px; font-size: 11.5px; white-space: nowrap;
-    border: 1px solid rgba(255, 255, 255, 0.1); background: transparent; color: #ADB2B8; cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    white-space: nowrap;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: transparent;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: all 0.15s ease;
   }
-  .ch-pill.active { background: #283142; border-color: #4868B2; color: #D3E2FF; }
+  .ch-pill:hover { color: #FFF; border-color: rgba(255, 255, 255, 0.24); }
+  .ch-pill.active {
+    background: rgba(86, 134, 254, 0.20);
+    border-color: rgba(86, 134, 254, 0.55);
+    color: #DBE8FF;
+  }
 
+  /* Feature Bento Grid */
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+  }
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    background: var(--bg-card-hover);
+    border-color: rgba(86, 134, 254, 0.34);
+  }
+  .card-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: var(--accent-soft);
+    border: 1px solid rgba(86, 134, 254, 0.28);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    margin-bottom: 16px;
+  }
+  .card h3 {
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+  }
+  .card p {
+    font-size: 14px;
+    color: var(--text-2);
+    line-height: 1.68;
+  }
+  .card-tag {
+    display: inline-block;
+    margin-top: 14px;
+    font-size: 11.5px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    color: #CBD5E1;
+  }
+
+  /* Download Section */
+  .dl-grid {
+    display: grid;
+    grid-template-columns: 1.25fr 1fr;
+    gap: 20px;
+    align-items: stretch;
+  }
+  .dl-card {
+    background: linear-gradient(155deg, rgba(22, 28, 44, 0.90), rgba(14, 17, 25, 0.94));
+    border: 1px solid rgba(86, 134, 254, 0.34);
+    border-radius: var(--radius-xl);
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  .dl-card.secondary {
+    background: var(--bg-card);
+    border-color: var(--border);
+  }
+  .dl-top { display: flex; flex-direction: column; gap: 10px; }
+  .dl-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #93B5FF;
+  }
+  .dl-card h3 { font-size: 22px; font-weight: 750; letter-spacing: -0.02em; }
+  .dl-card p { font-size: 14px; color: var(--text-2); }
+  .dl-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 4px;
+    font-size: 13.5px;
+    color: #CBD5E1;
+  }
+  .dl-list li { display: flex; align-items: flex-start; gap: 8px; }
+  .dl-list li::before { content: "✓"; color: var(--mint); font-weight: 700; }
+  .dl-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .dl-meta {
+    font-size: 12px;
+    color: var(--text-3);
+    font-family: ui-monospace, "Cascadia Code", monospace;
+    word-break: break-all;
+  }
+
+  .code-box {
+    margin-top: 8px;
+    padding: 14px 16px;
+    border-radius: var(--radius-md);
+    background: rgba(6, 7, 10, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    font-family: ui-monospace, "Cascadia Code", monospace;
+    font-size: 12.5px;
+    color: #DCE6FF;
+    line-height: 1.7;
+    overflow-x: auto;
+  }
+
+  /* Steps + FAQ */
+  .steps-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+  }
+  .step-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px;
+  }
+  .step-num {
+    font-family: ui-monospace, "Cascadia Code", monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px solid rgba(86, 134, 254, 0.30);
+    padding: 3px 9px;
+    border-radius: 999px;
+    display: inline-block;
+    margin-bottom: 12px;
+  }
+  .step-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .step-card p { font-size: 13.5px; color: var(--text-2); }
+
+  .faq-list {
+    max-width: 820px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  details.faq-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 16px 20px;
+    transition: border-color 0.18s ease;
+  }
+  details.faq-item[open] { border-color: rgba(86, 134, 254, 0.36); }
+  details.faq-item summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 15px;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  details.faq-item summary::-webkit-details-marker { display: none; }
+  details.faq-item summary::after {
+    content: "+";
+    font-size: 18px;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  details.faq-item[open] summary::after { content: "−"; }
+  details.faq-item p {
+    margin-top: 10px;
+    font-size: 14px;
+    color: var(--text-2);
+    line-height: 1.72;
+  }
+
+  /* Footer */
+  footer {
+    margin-top: 40px;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    padding: 32px 0 calc(32px + env(safe-area-inset-bottom, 0px));
+    color: var(--text-3);
+    font-size: 13px;
+  }
+  .footer-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .footer-links {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 18px;
+  }
+  .footer-links a:hover { color: var(--text); }
+
+  /* Responsive */
+  @media (max-width: 960px) {
+    .nav-links { display: none; }
+    .grid-3, .steps-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .dl-grid { grid-template-columns: 1fr; }
+  }
   @media (max-width: 640px) {
-    .top-actions { top: 12px; right: 12px; gap: 6px; }
-    .pill-btn { padding: 6px 11px; font-size: 12px; }
-    #controls { bottom: 12px; padding: 8px 12px; }
+    .container { padding: 0 16px; }
+    .nav { height: auto; padding: 12px 0; flex-wrap: wrap; row-gap: 10px; }
+    .brand { font-size: 16px; }
+    .nav-right { width: 100%; justify-content: space-between; }
+    .nav-dl-btn { display: none; }
+    .lang-switch { width: 100%; justify-content: space-between; }
+    .lang-btn { flex: 1; text-align: center; padding: 6px 4px; font-size: 12px; }
+    .hero { padding: 48px 0 36px; }
+    .hero-actions { flex-direction: column; align-items: stretch; }
+    .hero-actions .btn { width: 100%; }
+    .section { padding: 40px 0; }
+    .grid-3, .steps-grid { grid-template-columns: 1fr; }
+    .dl-card { padding: 22px 18px; }
+    .dl-buttons { flex-direction: column; }
+    .dl-buttons .btn { width: 100%; }
+    .cinema-topbar { padding: 10px 12px; }
+    .cinema-label { display: none; }
+    .cinema-controls { padding: 10px 12px 12px; }
   }
 </style>
 </head>
 <body>
-<div id="stage-wrap">
-  <div id="frame-box">
-    <iframe id="cinema-frame" title="DeepSeek Persona 3D Showcase"></iframe>
-  </div>
-</div>
 
-<div class="top-actions">
-  <button class="pill-btn" id="btn-aspect" type="button">切换竖屏 9:16</button>
-  <a class="pill-btn" href="https://github.com/zhou1736948757-cpu/deepseek-persona-chat" target="_blank" rel="noreferrer">GitHub 源码</a>
-  <a class="pill-btn primary" href="https://github.com/zhou1736948757-cpu/deepseek-persona-chat/releases/latest" target="_blank" rel="noreferrer">⬇ Windows 一键安装包</a>
-</div>
+<header class="nav-wrap">
+  <div class="container nav">
+    <a class="brand" href="#top">
+      <span class="brand-mark" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 72 72" fill="none">
+          <path d="M36 8L42.5 29.5L64 36L42.5 42.5L36 64L29.5 42.5L8 36L29.5 29.5L36 8Z" fill="#F9FAFB"/>
+          <circle cx="53" cy="19" r="5" fill="#5686FE"/>
+        </svg>
+      </span>
+      DeepSeek <span>Persona</span>
+    </a>
 
-<div id="start-curtain">
-  <div class="emblem">
-    <svg width="36" height="36" viewBox="0 0 72 72" fill="none">
-      <path d="M36 8L42.5 29.5L64 36L42.5 42.5L36 64L29.5 42.5L8 36L29.5 29.5L36 8Z" fill="#F9FAFB"/>
-      <circle cx="53" cy="19" r="4.5" fill="#5686FE"/>
-    </svg>
-  </div>
-  <div class="start-title">DeepSeek <span>Persona</span></div>
-  <div class="start-sub">把深爱的 Ta 真正接回本地。实时 60fps 3D 交互放映 · 附完整项目介绍旁白与定制配乐（71 秒）。</div>
-  <button class="start-play" id="btn-start" type="button">▶ 开启有声放映</button>
-  <div class="start-meta">自动适配电脑横屏 16:9 / 手机竖屏 9:16 · 零视频压缩失真</div>
-  <div class="start-links">
-    <a class="pill-btn primary" href="https://github.com/zhou1736948757-cpu/deepseek-persona-chat/releases/latest" target="_blank" rel="noreferrer">下载 Windows 一键安装包 (35.6 MB)</a>
-    <a class="pill-btn" href="https://github.com/zhou1736948757-cpu/deepseek-persona-chat" target="_blank" rel="noreferrer">查看开源仓库</a>
-  </div>
-</div>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#showcase" data-i18n="nav.showcase">3D 演示</a>
+      <a href="#features" data-i18n="nav.features">核心能力</a>
+      <a href="#download" data-i18n="nav.download">下载安装</a>
+      <a href="#faq" data-i18n="nav.faq">常见问题</a>
+    </nav>
 
-<div id="controls">
-  <div class="ctrl-row">
-    <button class="ctrl-btn" id="btn-play" type="button">▶</button>
-    <div class="scrub" id="scrub"><div class="scrub-fill" id="scrub-fill"></div></div>
-    <button class="ctrl-btn" id="btn-mute" type="button">🔊</button>
-    <span class="tc" id="tc">00:00 / 01:11</span>
+    <div class="nav-right">
+      <div class="lang-switch" role="group" aria-label="Language">
+        <button class="lang-btn active" type="button" data-lang="zh">中文</button>
+        <button class="lang-btn" type="button" data-lang="en">EN</button>
+        <button class="lang-btn" type="button" data-lang="ja">日本語</button>
+        <button class="lang-btn" type="button" data-lang="ko">한국어</button>
+      </div>
+      <a class="btn btn-primary btn-sm nav-dl-btn" href="#download" data-i18n="nav.getApp">免费下载</a>
+    </div>
   </div>
-  <div class="chapters" id="chapters"></div>
-</div>
+</header>
 
-<audio id="master-audio" src="./master_audio_71s.mp3" preload="auto"></audio>
+<main id="top">
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <div class="badge-pill">
+        <span class="badge-dot"></span>
+        <span data-i18n="hero.badge">v0.1.5 开源发布 · MIT 协议 · 本地优先</span>
+      </div>
+      <h1 data-i18n="hero.title">把深爱的 Ta，真正接回本地</h1>
+      <p class="hero-sub" data-i18n="hero.sub">
+        开源免费的本地 AI 人格对话桌面与应用。内置 25+ 免费模型开箱即用，支持 24 题深度人格问卷 + MBTI 捏人、旧聊天记录一键导入与本地 Raw RAG 记忆、CC-Switch 换模型不换灵魂，以及 3–15 秒声音克隆。
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary btn-lg" href="#download" data-i18n="hero.ctaPrimary">⬇ 下载 Windows 一键安装包 (v0.1.5)</a>
+        <a class="btn btn-lg" href="#showcase" data-i18n="hero.ctaDemo">▶ 观看 60fps 3D 交互演示</a>
+        <a class="btn btn-lg" href="https://github.com/zhou1736948757-cpu/deepseek-persona-chat" target="_blank" rel="noreferrer" data-i18n="hero.ctaGithub">GitHub 开源仓库</a>
+      </div>
+      <div class="trust-row">
+        <span class="trust-item"><b data-i18n="trust.t1b">零环境依赖</b> <span data-i18n="trust.t1">无需安装 Node.js</span></span>
+        <span class="trust-item"><b data-i18n="trust.t2b">100% 本地存储</b> <span data-i18n="trust.t2">聊天与记忆仅留本机 IndexedDB</span></span>
+        <span class="trust-item"><b data-i18n="trust.t3b">25+ 免费模型</b> <span data-i18n="trust.t3">安装打开即可对话</span></span>
+        <span class="trust-item"><b data-i18n="trust.t4b">全端适配</b> <span data-i18n="trust.t4">PC / Pad / 手机端零溢出</span></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 60fps Interactive 3D Showcase -->
+  <section class="section" id="showcase">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow" data-i18n="showcase.eyebrow">INTERACTIVE 3D SHOWCASE</span>
+        <h2 data-i18n="showcase.title">71 秒 60fps 真实界面 3D 放映</h2>
+        <p data-i18n="showcase.sub">零视频压缩失真，直接在浏览器实时渲染真实 UI 流程，点击章节可随时跳转。</p>
+      </div>
+
+      <div class="cinema-shell">
+        <div class="cinema-topbar">
+          <div style="display:flex;align-items:center;">
+            <span class="cinema-dots"><i></i><i></i><i></i></span>
+            <span class="cinema-label" data-i18n="showcase.barTitle">DeepSeek Persona v0.1.5 · 实时 3D 交互剧场</span>
+          </div>
+          <div class="cinema-bar-actions">
+            <button class="mini-pill" id="btn-aspect" type="button">9:16</button>
+            <a class="mini-pill" href="./showcase.html" target="_blank" rel="noreferrer" data-i18n="showcase.fullscreen">↗ 全屏播放</a>
+          </div>
+        </div>
+
+        <div class="stage-viewport" id="stage-viewport">
+          <div id="stage-box">
+            <iframe id="cinema-frame" title="DeepSeek Persona 3D Showcase" loading="lazy"></iframe>
+          </div>
+          <div class="stage-overlay" id="stage-overlay">
+            <button class="play-big" id="btn-start" type="button" data-i18n="showcase.playBtn">▶ 开启有声 3D 演示 (01:11)</button>
+            <div class="overlay-hint" data-i18n="showcase.hint">附中文旁白与定制配乐 · 支持随时切换 16:9 / 9:16</div>
+          </div>
+        </div>
+
+        <div class="cinema-controls">
+          <div class="ctrl-row">
+            <button class="ctrl-btn" id="btn-play" type="button" aria-label="Play or Pause">▶</button>
+            <div class="scrub" id="scrub"><div class="scrub-fill" id="scrub-fill"></div></div>
+            <button class="ctrl-btn" id="btn-mute" type="button" aria-label="Mute or Unmute">🔊</button>
+            <span class="tc" id="tc">00:00 / 01:11</span>
+          </div>
+          <div class="chapters" id="chapters"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Core Features -->
+  <section class="section" id="features">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow" data-i18n="features.eyebrow">CORE CAPABILITIES</span>
+        <h2 data-i18n="features.title">为长期情感陪伴与隐私掌控而设计</h2>
+        <p data-i18n="features.sub">不依赖单一云端平台，模型可以随时升级，但记忆、性格与声音永远属于你。</p>
+      </div>
+
+      <div class="grid-3">
+        <article class="card">
+          <div class="card-icon">⚡</div>
+          <h3 data-i18n="f1.title">内置 25+ 免费模型池，开箱即聊</h3>
+          <p data-i18n="f1.desc">预置 OurFreeModel 同源代理，安装打开即可零配置切换二十余个免费模型；也支持填入 DeepSeek 官方 API Key 解锁原生深度思考、联网搜索与流式朗读。</p>
+          <span class="card-tag" data-i18n="f1.tag">OurFreeModel v2.9.0 · 零配置</span>
+        </article>
+
+        <article class="card">
+          <div class="card-icon">🎭</div>
+          <h3 data-i18n="f2.title">24 题深度问卷 + MBTI 灵魂捏人</h3>
+          <p data-i18n="f2.desc">告别千篇一律的系统提示词。通过 24 题关系与表达偏好问卷 + 12 题 MBTI 四维测试，精准塑造 Ta 的第一眼气质、口癖、边界感与情绪回应节奏。</p>
+          <span class="card-tag" data-i18n="f2.tag">24Q Studio · MBTI 四维</span>
+        </article>
+
+        <article class="card">
+          <div class="card-icon">🧠</div>
+          <h3 data-i18n="f3.title">旧聊天导入 &amp; 本地 Raw RAG 记忆</h3>
+          <p data-i18n="f3.desc">直接拖入 DeepSeek 导出 ZIP、JSONL、Markdown 或 TXT 历史记录，全部切片存入本机 IndexedDB。零配置支持本地 BM25 召回，接入向量后升级混合语义检索并透明展示命中片段。</p>
+          <span class="card-tag" data-i18n="f3.tag">100% 本地 IndexedDB · BM25 + 向量</span>
+        </article>
+
+        <article class="card">
+          <div class="card-icon">🔀</div>
+          <h3 data-i18n="f4.title">CC-Switch：换模型，不换灵魂</h3>
+          <p data-i18n="f4.desc">同时兼容 OpenAI 与 Anthropic 双协议，内置硅基流动、OpenRouter、Ollama 等模板，一键拉取 GET /models 并在首页顶部胶囊秒切大脑，人格与记忆无缝衔接。</p>
+          <span class="card-tag" data-i18n="f4.tag">OpenAI / Anthropic · 一键拉取</span>
+        </article>
+
+        <article class="card">
+          <div class="card-icon">🎙️</div>
+          <h3 data-i18n="f5.title">自定义 TTS 与 3–15 秒声音克隆</h3>
+          <p data-i18n="f5.desc">支持 DeepSeek 官方流式、硅基流动 CosyVoice2、OpenAI TTS 与本地 Fish-Speech。上传 3–15 秒参考音频即可克隆专属音色，支持回复后自动朗读。</p>
+          <span class="card-tag" data-i18n="f5.tag">CosyVoice2 · Fish-Speech · 自动朗读</span>
+        </article>
+
+        <article class="card">
+          <div class="card-icon">📱</div>
+          <h3 data-i18n="f6.title">PC / Pad / 手机全端深度适配</h3>
+          <p data-i18n="f6.desc">针对手机与平板竖横屏专门定制毛玻璃抽屉侧边栏、底部 Sheet 弹窗、安全区避让与防误缩放输入，同时提供免服务器的 B站 Toy 独立静态包构建目标。</p>
+          <span class="card-tag" data-i18n="f6.tag">v0.1.5 响应式 · 零横向溢出</span>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Download Center -->
+  <section class="section" id="download">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow" data-i18n="dl.eyebrow">DOWNLOAD &amp; DEPLOY</span>
+        <h2 data-i18n="dl.title">下载 DeepSeek Persona v0.1.5</h2>
+        <p data-i18n="dl.sub">单文件图形安装程序，免管理员权限、免配置环境；同时提供静态包与完整开源代码。</p>
+      </div>
+
+      <div class="dl-grid">
+        <div class="dl-card">
+          <div class="dl-top">
+            <span class="dl-kicker" data-i18n="dl.winBadge">★ 推荐 · Windows 10 / 11 (x64)</span>
+            <h3 data-i18n="dl.winTitle">Windows 一键安装包</h3>
+            <p data-i18n="dl.winDesc">双击即装，内置私有 Node.js 运行时、生产前端与 OurFreeModel 服务，系统托盘静默运行，关闭无残留。</p>
+            <ul class="dl-list">
+              <li data-i18n="dl.winL1">离线纯净隔离：不加载任何第三方统计或外部 SDK</li>
+              <li data-i18n="dl.winL2">免管理员权限，默认安装至 %LOCALAPPDATA%\DeepSeekPersona</li>
+              <li data-i18n="dl.winL3">原生托盘支持一键重启服务、查日志、平滑覆盖升级</li>
+            </ul>
+          </div>
+          <div>
+            <div class="dl-buttons">
+              <a class="btn btn-primary btn-lg" id="btn-dl-global" href="https://github.com/zhou1736948757-cpu/deepseek-persona-chat/releases/download/v0.1.5/DeepSeek-Persona-Setup-v0.1.5-win-x64.exe" target="_blank" rel="noreferrer" data-i18n="dl.btnGlobal">⬇ GitHub 直链下载 (35.6 MB)</a>
+              <a class="btn btn-lg" id="btn-dl-cn" href="https://github.com/zhou1736948757-cpu/deepseek-persona-chat/releases/latest" target="_blank" rel="noreferrer" data-i18n="dl.btnReleases">全部发行版本</a>
+            </div>
+            <p class="dl-meta" style="margin-top:12px;">DeepSeek-Persona-Setup-v0.1.5-win-x64.exe · 35.67 MB</p>
+          </div>
+        </div>
+
+        <div class="dl-card secondary">
+          <div class="dl-top">
+            <span class="dl-kicker" data-i18n="dl.devBadge">静态包 &amp; 开源自建</span>
+            <h3 data-i18n="dl.devTitle">B站 Toy 静态包 / 源码本地运行</h3>
+            <p data-i18n="dl.devDesc">支持免服务器静态托管（兼容 B站 Toy 加密云存档），或通过 pnpm 在 macOS / Linux / Windows 上直接本地启动。</p>
+            <div class="code-box">git clone https://github.com/zhou1736948757-cpu/deepseek-persona-chat.git
+cd deepseek-persona-chat
+pnpm install &amp;&amp; pnpm sync:ofm &amp;&amp; pnpm dev</div>
+          </div>
+          <div class="dl-buttons">
+            <a class="btn" href="https://github.com/zhou1736948757-cpu/deepseek-persona-chat/releases/download/v0.1.5/DeepSeek-Persona-Bilibili-Toy-v0.1.5.zip" target="_blank" rel="noreferrer" data-i18n="dl.btnToy">⬇ 下载 Toy 静态包 (1.89 MB)</a>
+            <a class="btn" href="https://github.com/zhou1736948757-cpu/deepseek-persona-chat" target="_blank" rel="noreferrer" data-i18n="dl.btnSource">浏览 GitHub 源码</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3-Step Quick Start -->
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow" data-i18n="steps.eyebrow">QUICK START</span>
+        <h2 data-i18n="steps.title">三步开始你的专属对话</h2>
+      </div>
+      <div class="steps-grid">
+        <div class="step-card">
+          <span class="step-num">STEP 01</span>
+          <h3 data-i18n="s1.title">一键安装并自动打开</h3>
+          <p data-i18n="s1.desc">下载并运行安装程序，系统托盘自动拉起本地服务并在浏览器打开界面，零配置直接可用内置免费模型。</p>
+        </div>
+        <div class="step-card">
+          <span class="step-num">STEP 02</span>
+          <h3 data-i18n="s2.title">捏出人格或导入旧聊天</h3>
+          <p data-i18n="s2.desc">通过 24 题深度问卷 + MBTI 创建专属人格，或一键导入过去与 Ta 的聊天记录，让本地 Raw RAG 记住所有细节。</p>
+        </div>
+        <div class="step-card">
+          <span class="step-num">STEP 03</span>
+          <h3 data-i18n="s3.title">按需接入强模型与声音</h3>
+          <p data-i18n="s3.desc">随时用 CC-Switch 切换 DeepSeek 官方、硅基流动、OpenRouter 或本机 Ollama，并搭配自定义 TTS 让 Ta 开口说话。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section" id="faq">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">FAQ</span>
+        <h2 data-i18n="faq.title">常见问题</h2>
+      </div>
+      <div class="faq-list">
+        <details class="faq-item" open>
+          <summary data-i18n="faq.q1">这个软件是完全免费的吗？需要自己买 API Key 吗？</summary>
+          <p data-i18n="faq.a1">软件本身采用 MIT 开源协议完全免费。Windows 一键安装包已内置 OurFreeModel 免费模型池，不买 API Key 也能开箱直接聊；如果你想获得更稳定的旗舰模型、联网搜索或专属音色克隆，可随时在设置中填入 DeepSeek 官方或硅基流动等第三方 Key。</p>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="faq.q2">我的聊天记录、人格设定和参考音频会上传到作者服务器吗？</summary>
+          <p data-i18n="faq.a2">不会。本软件没有作者自建后端服务器，所有聊天记录、Raw RAG 记忆切片、人格问卷与克隆音频素材均 100% 存储在你自己的本机浏览器 IndexedDB 中，对话请求仅直接发往你选择的模型服务商。</p>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="faq.q3">Windows 安装包需要我提前安装 Node.js 或 Python 吗？</summary>
+          <p data-i18n="faq.a3">不需要。v0.1.5 安装包内部已经自带精简私有 Node.js 运行时，不污染你的系统环境变量，也不需要管理员权限，随时可以在 Windows「应用和功能」中一键干净卸载。</p>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="faq.q4">可以在手机或平板（iPad / 安卓 Pad）上使用吗？</summary>
+          <p data-i18n="faq.a4">可以。v0.1.5 已完成手机端与平板竖横屏的全套响应式适配（抽屉侧边栏、底部 Sheet 弹窗、安全区与防缩放表单），在局域网或静态托管部署后均可流畅使用。</p>
+        </details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container footer-inner">
+    <div>© 2026 DeepSeek Persona · MIT License · <span data-i18n="footer.note">基于 deepseek-ai/chat-demo 深度构建</span></div>
+    <div class="footer-links">
+      <a href="./showcase.html" data-i18n="footer.cinema">全屏 3D 剧场</a>
+      <a href="https://github.com/zhou1736948757-cpu/deepseek-persona-chat" target="_blank" rel="noreferrer">GitHub</a>
+      <a href="https://github.com/zhou1736948757-cpu/deepseek-persona-chat/releases/latest" target="_blank" rel="noreferrer" data-i18n="footer.releases">Releases v0.1.5</a>
+    </div>
+  </div>
+</footer>
+
+<audio id="master-audio" src="./master_audio_71s.mp3" preload="metadata"></audio>
 
 <script>
 (() => {
-  const DURATION = 71.5;
-  const CHAPTERS = [
-    { t: 0.0,   label: '01 项目介绍' },
-    { t: 11.83, label: '02 25+免费池' },
-    { t: 18.40, label: '03 深度思考' },
-    { t: 27.03, label: '04 MBTI 捏人' },
-    { t: 35.42, label: '05 回忆 Raw RAG' },
-    { t: 46.53, label: '06 CC-Switch' },
-    { t: 53.20, label: '07 声音克隆' },
-    { t: 60.99, label: '08 一键安装' },
-  ];
+  /**
+   * 如你已将 Windows 安装包同步到国内网盘（如 123云盘 / 蓝奏云 / 夸克 / OSS CDN），
+   * 只需把链接填到下方 cnMirrorUrl，官网就会自动把第二个按钮切换为「国内高速下载」。
+   */
+  const DOWNLOAD_CONFIG = {
+    cnMirrorUrl: '',
+  };
 
-  const frameBox = document.getElementById('frame-box');
+  const I18N = {
+    zh: {
+      htmlLang: 'zh-CN',
+      pageTitle: 'DeepSeek Persona — 把深爱的 Ta 接回本地',
+      pageDesc: '开源免费本地 AI 人格对话桌面与应用：内置 25+ 免费模型、24 题深度人格问卷 + MBTI、旧聊天记录导入与本地 Raw RAG 记忆、CC-Switch 换模型不换灵魂、声音克隆、Windows 一键安装。',
+      'nav.showcase': '3D 演示',
+      'nav.features': '核心能力',
+      'nav.download': '下载安装',
+      'nav.faq': '常见问题',
+      'nav.getApp': '免费下载',
+      'hero.badge': 'v0.1.5 开源发布 · MIT 协议 · 本地优先',
+      'hero.title': '把深爱的 Ta，真正接回本地',
+      'hero.sub': '开源免费的本地 AI 人格对话桌面与应用。内置 25+ 免费模型开箱即用，支持 24 题深度人格问卷 + MBTI 捏人、旧聊天记录一键导入与本地 Raw RAG 记忆、CC-Switch 换模型不换灵魂，以及 3–15 秒声音克隆。',
+      'hero.ctaPrimary': '⬇ 下载 Windows 一键安装包 (v0.1.5)',
+      'hero.ctaDemo': '▶ 观看 60fps 3D 交互演示',
+      'hero.ctaGithub': 'GitHub 开源仓库',
+      'trust.t1b': '零环境依赖',
+      'trust.t1': '无需安装 Node.js',
+      'trust.t2b': '100% 本地存储',
+      'trust.t2': '聊天与记忆仅留本机 IndexedDB',
+      'trust.t3b': '25+ 免费模型',
+      'trust.t3': '安装打开即可对话',
+      'trust.t4b': '全端适配',
+      'trust.t4': 'PC / Pad / 手机端零溢出',
+      'showcase.eyebrow': 'INTERACTIVE 3D SHOWCASE',
+      'showcase.title': '71 秒 60fps 真实界面 3D 放映',
+      'showcase.sub': '零视频压缩失真，直接在浏览器实时渲染真实 UI 流程，点击章节可随时跳转。',
+      'showcase.barTitle': 'DeepSeek Persona v0.1.5 · 实时 3D 交互剧场',
+      'showcase.fullscreen': '↗ 全屏播放',
+      'showcase.playBtn': '▶ 开启有声 3D 演示 (01:11)',
+      'showcase.hint': '附中文旁白与定制配乐 · 支持随时切换 16:9 / 9:16',
+      'features.eyebrow': 'CORE CAPABILITIES',
+      'features.title': '为长期情感陪伴与隐私掌控而设计',
+      'features.sub': '不依赖单一云端平台，模型可以随时升级，但记忆、性格与声音永远属于你。',
+      'f1.title': '内置 25+ 免费模型池，开箱即聊',
+      'f1.desc': '预置 OurFreeModel 同源代理，安装打开即可零配置切换二十余个免费模型；也支持填入 DeepSeek 官方 API Key 解锁原生深度思考、联网搜索与流式朗读。',
+      'f1.tag': 'OurFreeModel v2.9.0 · 零配置',
+      'f2.title': '24 题深度问卷 + MBTI 灵魂捏人',
+      'f2.desc': '告别千篇一律的系统提示词。通过 24 题关系与表达偏好问卷 + 12 题 MBTI 四维测试，精准塑造 Ta 的第一眼气质、口癖、边界感与情绪回应节奏。',
+      'f2.tag': '24Q Studio · MBTI 四维',
+      'f3.title': '旧聊天导入 & 本地 Raw RAG 记忆',
+      'f3.desc': '直接拖入 DeepSeek 导出 ZIP、JSONL、Markdown 或 TXT 历史记录，全部切片存入本机 IndexedDB。零配置支持本地 BM25 召回，接入向量后升级混合语义检索并透明展示命中片段。',
+      'f3.tag': '100% 本地 IndexedDB · BM25 + 向量',
+      'f4.title': 'CC-Switch：换模型，不换灵魂',
+      'f4.desc': '同时兼容 OpenAI 与 Anthropic 双协议，内置硅基流动、OpenRouter、Ollama 等模板，一键拉取 GET /models 并在首页顶部胶囊秒切大脑，人格与记忆无缝衔接。',
+      'f4.tag': 'OpenAI / Anthropic · 一键拉取',
+      'f5.title': '自定义 TTS 与 3–15 秒声音克隆',
+      'f5.desc': '支持 DeepSeek 官方流式、硅基流动 CosyVoice2、OpenAI TTS 与本地 Fish-Speech。上传 3–15 秒参考音频即可克隆专属音色，支持回复后自动朗读。',
+      'f5.tag': 'CosyVoice2 · Fish-Speech · 自动朗读',
+      'f6.title': 'PC / Pad / 手机全端深度适配',
+      'f6.desc': '针对手机与平板竖横屏专门定制毛玻璃抽屉侧边栏、底部 Sheet 弹窗、安全区避让与防误缩放输入，同时提供免服务器的 B站 Toy 独立静态包构建目标。',
+      'f6.tag': 'v0.1.5 响应式 · 零横向溢出',
+      'dl.eyebrow': 'DOWNLOAD & DEPLOY',
+      'dl.title': '下载 DeepSeek Persona v0.1.5',
+      'dl.sub': '单文件图形安装程序，免管理员权限、免配置环境；同时提供静态包与完整开源代码。',
+      'dl.winBadge': '★ 推荐 · Windows 10 / 11 (x64)',
+      'dl.winTitle': 'Windows 一键安装包',
+      'dl.winDesc': '双击即装，内置私有 Node.js 运行时、生产前端与 OurFreeModel 服务，系统托盘静默运行，关闭无残留。',
+      'dl.winL1': '离线纯净隔离：不加载任何第三方统计或外部 SDK',
+      'dl.winL2': '免管理员权限，默认安装至 %LOCALAPPDATA%\\DeepSeekPersona',
+      'dl.winL3': '原生托盘支持一键重启服务、查日志、平滑覆盖升级',
+      'dl.btnGlobal': '⬇ GitHub 直链下载 (35.6 MB)',
+      'dl.btnReleases': '全部发行版本',
+      'dl.btnCnMirror': '⚡ 国内高速下载 (35.6 MB)',
+      'dl.devBadge': '静态包 & 开源自建',
+      'dl.devTitle': 'B站 Toy 静态包 / 源码本地运行',
+      'dl.devDesc': '支持免服务器静态托管（兼容 B站 Toy 加密云存档），或通过 pnpm 在 macOS / Linux / Windows 上直接本地启动。',
+      'dl.btnToy': '⬇ 下载 Toy 静态包 (1.89 MB)',
+      'dl.btnSource': '浏览 GitHub 源码',
+      'steps.eyebrow': 'QUICK START',
+      'steps.title': '三步开始你的专属对话',
+      's1.title': '一键安装并自动打开',
+      's1.desc': '下载并运行安装程序，系统托盘自动拉起本地服务并在浏览器打开界面，零配置直接可用内置免费模型。',
+      's2.title': '捏出人格或导入旧聊天',
+      's2.desc': '通过 24 题深度问卷 + MBTI 创建专属人格，或一键导入过去与 Ta 的聊天记录，让本地 Raw RAG 记住所有细节。',
+      's3.title': '按需接入强模型与声音',
+      's3.desc': '随时用 CC-Switch 切换 DeepSeek 官方、硅基流动、OpenRouter 或本机 Ollama，并搭配自定义 TTS 让 Ta 开口说话。',
+      'faq.title': '常见问题',
+      'faq.q1': '这个软件是完全免费的吗？需要自己买 API Key 吗？',
+      'faq.a1': '软件本身采用 MIT 开源协议完全免费。Windows 一键安装包已内置 OurFreeModel 免费模型池，不买 API Key 也能开箱直接聊；如果你想获得更稳定的旗舰模型、联网搜索或专属音色克隆，可随时在设置中填入 DeepSeek 官方或硅基流动等第三方 Key。',
+      'faq.q2': '我的聊天记录、人格设定和参考音频会上传到作者服务器吗？',
+      'faq.a2': '不会。本软件没有作者自建后端服务器，所有聊天记录、Raw RAG 记忆切片、人格问卷与克隆音频素材均 100% 存储在你自己的本机浏览器 IndexedDB 中，对话请求仅直接发往你选择的模型服务商。',
+      'faq.q3': 'Windows 安装包需要我提前安装 Node.js 或 Python 吗？',
+      'faq.a3': '不需要。v0.1.5 安装包内部已经自带精简私有 Node.js 运行时，不污染你的系统环境变量，也不需要管理员权限，随时可以在 Windows「应用和功能」中一键干净卸载。',
+      'faq.q4': '可以在手机或平板（iPad / 安卓 Pad）上使用吗？',
+      'faq.a4': '可以。v0.1.5 已完成手机端与平板竖横屏的全套响应式适配（抽屉侧边栏、底部 Sheet 弹窗、安全区与防缩放表单），在局域网或静态托管部署后均可流畅使用。',
+      'footer.note': '基于 deepseek-ai/chat-demo 深度构建',
+      'footer.cinema': '全屏 3D 剧场',
+      'footer.releases': 'Releases v0.1.5',
+      aspectTo9x16: '切换竖屏 9:16',
+      aspectTo16x9: '切换横屏 16:9',
+      chapters: ['01 项目介绍', '02 25+免费池', '03 深度思考', '04 MBTI 捏人', '05 回忆 Raw RAG', '06 CC-Switch', '07 声音克隆', '08 一键安装'],
+    },
+    en: {
+      htmlLang: 'en',
+      pageTitle: 'DeepSeek Persona — Bring Your AI Companion Home Locally',
+      pageDesc: 'Open-source local-first AI persona desktop & web app with 25+ built-in free models, 24Q + MBTI persona studio, history import & local Raw RAG memory, CC-Switch multi-model hub, and 3-15s voice cloning.',
+      'nav.showcase': '3D Demo',
+      'nav.features': 'Features',
+      'nav.download': 'Download',
+      'nav.faq': 'FAQ',
+      'nav.getApp': 'Download Free',
+      'hero.badge': 'v0.1.5 Open Source · MIT License · Local-First',
+      'hero.title': 'Bring Your Beloved AI Home, Locally',
+      'hero.sub': 'An open-source, local-first AI persona client. Start chatting immediately with 25+ built-in free models, craft rich personalities via 24Q + MBTI, import chat history into local Raw RAG memory, switch brains with CC-Switch, and clone voices in 3–15 seconds.',
+      'hero.ctaPrimary': '⬇ Download Windows Installer (v0.1.5)',
+      'hero.ctaDemo': '▶ Watch 60fps 3D Interactive Demo',
+      'hero.ctaGithub': 'View on GitHub',
+      'trust.t1b': 'Zero Dependencies',
+      'trust.t1': 'No Node.js setup needed',
+      'trust.t2b': '100% Local Data',
+      'trust.t2': 'Chats & memory stay in IndexedDB',
+      'trust.t3b': '25+ Free Models',
+      'trust.t3': 'Ready right out of the box',
+      'trust.t4b': 'Responsive UI',
+      'trust.t4': 'Desktop, Tablet & Phone ready',
+      'showcase.eyebrow': 'INTERACTIVE 3D SHOWCASE',
+      'showcase.title': '71s Real-UI 60fps 3D Interactive Cinema',
+      'showcase.sub': 'Rendered live in your browser with zero video compression loss. Click any chapter to jump straight in.',
+      'showcase.barTitle': 'DeepSeek Persona v0.1.5 · Real-Time 3D Stage',
+      'showcase.fullscreen': '↗ Fullscreen',
+      'showcase.playBtn': '▶ Play 3D Showcase with Audio (01:11)',
+      'showcase.hint': 'Includes original soundtrack & narration · Toggle 16:9 / 9:16 anytime',
+      'features.eyebrow': 'CORE CAPABILITIES',
+      'features.title': 'Built for Long-Term Companionship & Full Ownership',
+      'features.sub': 'Models evolve fast—your memories, personality tuning, and cloned voice should stay yours forever.',
+      'f1.title': '25+ Built-In Free Models, Zero Setup',
+      'f1.desc': 'Ships with a bundled OurFreeModel same-origin proxy so you can chat immediately. Add your official DeepSeek API Key anytime for native Deep Thinking, Web Search, and streaming TTS.',
+      'f1.tag': 'OurFreeModel v2.9.0 · Ready Now',
+      'f2.title': '24-Question Studio + MBTI Persona Builder',
+      'f2.desc': 'Move beyond generic system prompts. Craft nuanced attachment style, speaking cadence, boundaries, and emotional rhythm through a guided 24-question interview and 12-question MBTI test.',
+      'f2.tag': '24Q Studio · 4-Axis MBTI',
+      'f3.title': 'History Import & Local Raw RAG Memory',
+      'f3.desc': 'Drop in DeepSeek export ZIPs, JSONL, Markdown, or TXT logs. Everything is indexed locally in IndexedDB with zero-config BM25 recall—upgradeable to semantic + BM25 hybrid retrieval with transparent citations.',
+      'f3.tag': '100% Local IndexedDB · Hybrid RAG',
+      'f4.title': 'CC-Switch: Upgrade Brains, Keep the Soul',
+      'f4.desc': 'Supports both OpenAI and Anthropic API protocols with presets for SiliconFlow, OpenRouter, and local Ollama. Fetch /models in one click and hot-swap models from the top bar without losing persona continuity.',
+      'f4.tag': 'OpenAI / Anthropic · 1-Click Fetch',
+      'f5.title': 'Custom TTS & 3–15s Voice Cloning',
+      'f5.desc': 'Works with official DeepSeek TTS, SiliconFlow CosyVoice2, OpenAI Audio Speech, and local Fish-Speech. Upload a 3–15 second voice sample to clone a signature voice with optional auto-read.',
+      'f5.tag': 'CosyVoice2 · Fish-Speech · Auto-Speak',
+      'f6.title': 'Polished Desktop, Tablet & Phone Experience',
+      'f6.desc': 'Tailored for phones and tablets with frosted drawer navigation, mobile bottom-sheet modals, notch safe-area padding, anti-zoom inputs, and an optional zero-backend static bundle.',
+      'f6.tag': 'v0.1.5 Responsive · Zero Overflow',
+      'dl.eyebrow': 'DOWNLOAD & DEPLOY',
+      'dl.title': 'Download DeepSeek Persona v0.1.5',
+      'dl.sub': 'Single-file Windows GUI installer with no admin privileges required, plus static bundle & full source.',
+      'dl.winBadge': '★ Recommended · Windows 10 / 11 (x64)',
+      'dl.winTitle': 'Windows 1-Click Installer',
+      'dl.winDesc': 'Double-click and start chatting. Bundles a private Node.js runtime, production UI, and local OurFreeModel service in a clean system tray app.',
+      'dl.winL1': 'Pure offline isolation: zero third-party analytics or external SDKs',
+      'dl.winL2': 'No admin rights needed; installs cleanly to %LOCALAPPDATA%\\DeepSeekPersona',
+      'dl.winL3': 'Native tray icon for restart, logs, and clean one-click uninstall',
+      'dl.btnGlobal': '⬇ Direct Download (35.6 MB)',
+      'dl.btnReleases': 'All GitHub Releases',
+      'dl.btnCnMirror': '⚡ China Fast Mirror (35.6 MB)',
+      'dl.devBadge': 'Static Bundle & Open Source',
+      'dl.devTitle': 'Static Web Bundle / Run From Source',
+      'dl.devDesc': 'Deploy as a zero-backend static bundle or run locally on macOS, Linux, and Windows via pnpm.',
+      'dl.btnToy': '⬇ Download Static ZIP (1.89 MB)',
+      'dl.btnSource': 'Browse GitHub Repo',
+      'steps.eyebrow': 'QUICK START',
+      'steps.title': 'Up and Running in Three Steps',
+      's1.title': 'Install & Auto-Launch',
+      's1.desc': 'Run the installer and the tray launcher starts the local server automatically—ready to chat with built-in free models right away.',
+      's2.title': 'Shape a Persona or Import History',
+      's2.desc': 'Complete the 24Q + MBTI studio to create your companion, or import past chat exports into local Raw RAG memory.',
+      's3.title': 'Plug In Stronger Models & Voice',
+      's3.desc': 'Hot-swap DeepSeek, OpenRouter, SiliconFlow, or Ollama via CC-Switch and enable custom TTS voice cloning whenever you like.',
+      'faq.title': 'Frequently Asked Questions',
+      'faq.q1': 'Is DeepSeek Persona free? Do I have to buy an API key?',
+      'faq.a1': 'Yes, the app is 100% free and MIT-licensed. The Windows installer includes the built-in OurFreeModel pool so you can start without any API key. You can also connect DeepSeek official or third-party API keys anytime.',
+      'faq.q2': 'Are my chats, personas, or voice samples uploaded to your server?',
+      'faq.a2': 'Never. There is no author-hosted backend server. All chats, Raw RAG memory chunks, personas, and voice reference clips remain 100% in your local browser IndexedDB. API requests go directly to the model provider you choose.',
+      'faq.q3': 'Do I need to install Node.js or Python beforehand on Windows?',
+      'faq.a3': 'No. The v0.1.5 installer ships with a private embedded Node.js runtime, requires no administrator privileges, does not touch your system PATH, and uninstalls cleanly from Windows Settings.',
+      'faq.q4': 'Does it work on smartphones and tablets (iPad / Android Pad)?',
+      'faq.a4': 'Yes. v0.1.5 includes dedicated responsive layouts for phones and portrait/landscape tablets, featuring drawer sidebars, mobile bottom-sheet dialogs, and safe-area support.',
+      'footer.note': 'Built upon deepseek-ai/chat-demo',
+      'footer.cinema': 'Fullscreen 3D Cinema',
+      'footer.releases': 'Releases v0.1.5',
+      aspectTo9x16: 'Switch to 9:16',
+      aspectTo16x9: 'Switch to 16:9',
+      chapters: ['01 Intro', '02 25+ Free Pool', '03 Deep Thinking', '04 MBTI Studio', '05 Raw RAG', '06 CC-Switch', '07 Voice Clone', '08 1-Click Setup'],
+    },
+    ja: {
+      htmlLang: 'ja',
+      pageTitle: 'DeepSeek Persona — 大切な AI パートナーを、自分のローカル環境へ',
+      pageDesc: 'オープンソース＆無料のローカル AI ペルソナ対話アプリ。25以上の無料モデル内蔵、24問の性格設計＋MBTI、過去ログ一括インポート＆ローカル Raw RAG 記憶、CC-Switch モデル切替、3〜15秒ボイスクローン対応。',
+      'nav.showcase': '3D デモ',
+      'nav.features': '主な機能',
+      'nav.download': 'ダウンロード',
+      'nav.faq': 'よくある質問',
+      'nav.getApp': '無料ダウンロード',
+      'hero.badge': 'v0.1.5 オープンソース · MIT ライセンス · ローカル優先',
+      'hero.title': '大切なあの人を、自分のローカルへ',
+      'hero.sub': 'オープンソース・無料のローカル AI ペルソナ対話アプリ。25種類以上の無料モデルを初期搭載し、24問の深層アンケート＋MBTIによる人格設計、過去チャットのローカル Raw RAG 記憶、CC-Switch での自由なモデル切替、3〜15秒の音声クローンまで完結します。',
+      'hero.ctaPrimary': '⬇ Windows ワンクリック導入版 (v0.1.5)',
+      'hero.ctaDemo': '▶ 60fps 3D インタラクティブ実演を見る',
+      'hero.ctaGithub': 'GitHub リポジトリ',
+      'trust.t1b': '環境構築不要',
+      'trust.t1': 'Node.js の事前導入なし',
+      'trust.t2b': '100% ローカル保存',
+      'trust.t2': '会話と記憶はすべて端末内 IndexedDB',
+      'trust.t3b': '25+ 無料モデル',
+      'trust.t3': 'インストール直後から会話可能',
+      'trust.t4b': 'マルチデバイス対応',
+      'trust.t4': 'PC / タブレット / スマホ完全対応',
+      'showcase.eyebrow': 'INTERACTIVE 3D SHOWCASE',
+      'showcase.title': '71秒 60fps 実画面 3D インタラクティブ上映',
+      'showcase.sub': '動画圧縮による劣化ゼロ。実際の UI をブラウザ上でリアルタイム描画し、チャプターから自由にジャンプできます。',
+      'showcase.barTitle': 'DeepSeek Persona v0.1.5 · リアルタイム 3D シアター',
+      'showcase.fullscreen': '↗ 全画面表示',
+      'showcase.playBtn': '▶ 音声付き 3D デモを再生 (01:11)',
+      'showcase.hint': 'オリジナルBGM・音声解説付き · 16:9 / 9:16 いつでも切替可能',
+      'features.eyebrow': 'CORE CAPABILITIES',
+      'features.title': '長期的な対話とプライバシー主権のための設計',
+      'features.sub': 'モデルはいつでも最新へ乗り換え可能。思い出・性格・声だけは、ずっとあなたの手元に残ります。',
+      'f1.title': '25+ 無料モデル内蔵、開いてすぐ会話',
+      'f1.desc': 'OurFreeModel 同源プロキシを標準搭載し、設定ゼロですぐ対話できます。DeepSeek 公式 API Key を入力すれば、ネイティブ Deep Thinking・Web 検索・ストリーミング音声も解放されます。',
+      'f1.tag': 'OurFreeModel v2.9.0 · 設定不要',
+      'f2.title': '24問の深層質問＋MBTI 人格スタジオ',
+      'f2.desc': 'ありきたりなプロンプトから卒業。関係性や話し方を問う24問と12問のMBTI診断により、第一印象・口癖・距離感・感情のテンポまで繊細に形作れます。',
+      'f2.tag': '24Q スタジオ · MBTI 4軸設計',
+      'f3.title': '過去ログ取込＆ローカル Raw RAG 記憶',
+      'f3.desc': 'DeepSeek エクスポート ZIP・JSONL・Markdown・TXT をドラッグ＆ドロップで取り込み、端末の IndexedDB に保存。設定不要の BM25 検索に加え、Embedding 追加で意味検索ハイブリッドへ進化します。',
+      'f3.tag': '100% ローカル IndexedDB · ハイブリッド RAG',
+      'f4.title': 'CC-Switch：頭脳を変えても、魂はそのまま',
+      'f4.desc': 'OpenAI / Anthropic 両プロトコル対応。SiliconFlow・OpenRouter・ローカル Ollama 等のテンプレートを内蔵し、/models 自動取得からヘッダー1クリックでモデルを即切替できます。',
+      'f4.tag': 'OpenAI / Anthropic · ワンクリック取得',
+      'f5.title': 'カスタム TTS＆3〜15秒ボイスクローン',
+      'f5.desc': 'DeepSeek 公式、SiliconFlow CosyVoice2、OpenAI TTS、ローカル Fish-Speech に対応。3〜15秒の参照音声をアップロードするだけで専用ボイスを再現し、自動読み上げも可能です。',
+      'f5.tag': 'CosyVoice2 · Fish-Speech · 自動再生',
+      'f6.title': 'PC・タブレット・スマホ全画面最適化',
+      'f6.desc': 'スマホとタブレット縦横それぞれに、すりガラスドロワー・下部シートモーダル・セーフエリア余白・ズーム防止入力を実装。サーバー不要の静的ビルドにも対応しています。',
+      'f6.tag': 'v0.1.5 レスポンシブ · 横スクロールゼロ',
+      'dl.eyebrow': 'DOWNLOAD & DEPLOY',
+      'dl.title': 'DeepSeek Persona v0.1.5 をダウンロード',
+      'dl.sub': '管理者権限・環境構築不要の単一 Windows インストーラーと、静的パッケージ・ソースコードを提供しています。',
+      'dl.winBadge': '★ おすすめ · Windows 10 / 11 (x64)',
+      'dl.winTitle': 'Windows ワンクリック・インストーラー',
+      'dl.winDesc': 'ダブルクリックするだけで完了。専用 Node.js ランタイム・フロントエンド・無料モデルサービスを同梱し、タスクトレイで静かに動作します。',
+      'dl.winL1': '完全オフライン分離：外部SDKやトラッキングを一切読み込みません',
+      'dl.winL2': '管理者権限不要・%LOCALAPPDATA%\\DeepSeekPersona へクリーン導入',
+      'dl.winL3': 'トレイから再起動・ログ確認・完全アンインストールまでワンクリック',
+      'dl.btnGlobal': '⬇ 直接ダウンロード (35.6 MB)',
+      'dl.btnReleases': 'すべてのリリース一覧',
+      'dl.btnCnMirror': '⚡ 高速ミラーダウンロード (35.6 MB)',
+      'dl.devBadge': '静的パッケージ＆ソースビルド',
+      'dl.devTitle': '静的 Web パッケージ / ローカル起動',
+      'dl.devDesc': 'サーバーレス静的ホスティング向け ZIP のほか、macOS / Linux / Windows で pnpm から直接起動することもできます。',
+      'dl.btnToy': '⬇ 静的 ZIP をダウンロード (1.89 MB)',
+      'dl.btnSource': 'GitHub ソースを見る',
+      'steps.eyebrow': 'QUICK START',
+      'steps.title': '3ステップですぐスタート',
+      's1.title': 'インストールして自動起動',
+      's1.desc': 'インストーラーを実行するだけでトレイからローカルサービスが起動し、内蔵の無料モデルですぐに会話を始められます。',
+      's2.title': '人格を設計、または過去ログを取込',
+      's2.desc': '24問＋MBTIで理想のパートナーを作るか、これまでの会話履歴をインポートしてローカル Raw RAG に記憶させます。',
+      's3.title': '好みのモデルと声を自由に接続',
+      's3.desc': 'CC-Switch で DeepSeek 公式や Ollama 等へいつでも切替可能。カスタム TTS を繋げば声で語りかけてくれます。',
+      'faq.title': 'よくある質問',
+      'faq.q1': '完全無料ですか？API Key の購入は必須ですか？',
+      'faq.a1': 'アプリ本体は MIT ライセンスで完全無料です。Windows 導入版には OurFreeModel 無料モデルプールが同梱されているため、API Key なしでもすぐ使えます。より高性能なモデルや音声クローンを使いたい場合のみ、お好みの API Key を設定してください。',
+      'faq.q2': '会話履歴や人格データ、音声サンプルは開発者のサーバーに送信されますか？',
+      'faq.a2': '一切送信されません。開発者側のバックエンドサーバーは存在せず、会話・Raw RAG 記憶・人格・音声素材は100%お使いの端末の IndexedDB に保存されます。通信先はあなたが選んだモデル提供元のみです。',
+      'faq.q3': 'Windows 版の利用に Node.js や Python の事前インストールは必要ですか？',
+      'faq.a3': '不要です。v0.1.5 インストーラー内部に専用の Node.js ランタイムを内蔵しており、環境変数を汚さず管理者権限なしで導入・削除できます。',
+      'faq.q4': 'スマートフォンや iPad / Android タブレットでも使えますか？',
+      'faq.a4': 'はい。v0.1.5 ではスマホおよびタブレット縦横画面向けのレスポンシブ UI（ドロワーメニュー、ボトムシート、セーフエリア対応）を完備しています。',
+      'footer.note': 'deepseek-ai/chat-demo をベースに開発',
+      'footer.cinema': '全画面 3D シアター',
+      'footer.releases': 'Releases v0.1.5',
+      aspectTo9x16: '縦画面 9:16 へ',
+      aspectTo16x9: '横画面 16:9 へ',
+      chapters: ['01 プロジェクト紹介', '02 25+無料モデル', '03 深い思考', '04 MBTI 設計', '05 Raw RAG 記憶', '06 CC-Switch', '07 音声クローン', '08 ワンクリック導入'],
+    },
+    ko: {
+      htmlLang: 'ko',
+      pageTitle: 'DeepSeek Persona — 소중한 AI 파트너를 내 로컬로',
+      pageDesc: '오픈소스 무료 로컬 AI 페르소나 대화 앱: 25+ 무료 모델 내장, 24문항 성격 설문 + MBTI 페르소나 스튜디오, 대화 기록 가져오기 & 로컬 Raw RAG 기억, CC-Switch 멀티 모델 전환, 3~15초 음성 클로닝, Windows 원클릭 설치.',
+      'nav.showcase': '3D 데모',
+      'nav.features': '핵심 기능',
+      'nav.download': '다운로드',
+      'nav.faq': '자주 묻는 질문',
+      'nav.getApp': '무료 다운로드',
+      'hero.badge': 'v0.1.5 오픈소스 · MIT 라이선스 · 로컬 우선',
+      'hero.title': '소중한 그 사람을, 온전히 내 로컬로',
+      'hero.sub': '오픈소스 무료 로컬 AI 페르소나 데스크톱/웹 앱입니다. 25개 이상의 무료 모델이 기본 내장되어 바로 대화할 수 있으며, 24문항 설문 + MBTI 성격 설계, 과거 대화 가져오기 및 로컬 Raw RAG 기억, CC-Switch 모델 교체, 3~15초 음성 클로닝까지 지원합니다.',
+      'hero.ctaPrimary': '⬇ Windows 원클릭 설치 파일 (v0.1.5)',
+      'hero.ctaDemo': '▶ 60fps 3D 인터랙티브 데모 보기',
+      'hero.ctaGithub': 'GitHub 저장소',
+      'trust.t1b': '환경 설정 제로',
+      'trust.t1': 'Node.js 사전 설치 불필요',
+      'trust.t2b': '100% 로컬 저장',
+      'trust.t2': '대화와 기억은 내 기기 IndexedDB에만',
+      'trust.t3b': '25+ 무료 모델',
+      'trust.t3': '설치 후 바로 대화 시작',
+      'trust.t4b': '전 기기 최적화',
+      'trust.t4': 'PC / 태블릿 / 모바일 완벽 대응',
+      'showcase.eyebrow': 'INTERACTIVE 3D SHOWCASE',
+      'showcase.title': '71초 60fps 실제 UI 3D 인터랙티브 시어터',
+      'showcase.sub': '영상 압축 손실 없이 브라우저에서 실제 인터페이스를 실시간 렌더링합니다. 챕터를 눌러 원하는 구간으로 이동해 보세요.',
+      'showcase.barTitle': 'DeepSeek Persona v0.1.5 · 실시간 3D 쇼케이스',
+      'showcase.fullscreen': '↗ 전체 화면',
+      'showcase.playBtn': '▶ 사운드 포함 3D 데모 재생 (01:11)',
+      'showcase.hint': '오리지널 BGM 및 내레이션 포함 · 16:9 / 9:16 즉시 전환',
+      'features.eyebrow': 'CORE CAPABILITIES',
+      'features.title': '오래 함께하는 동반자와 프라이버시 주권을 위해',
+      'features.sub': 'AI 모델은 언제든 더 똑똑한 모델로 바꿀 수 있지만, 추억과 성격 그리고 목소리는 영원히 당신 곁에 남습니다.',
+      'f1.title': '25+ 무료 모델 기본 내장, 즉시 대화',
+      'f1.desc': 'OurFreeModel 로컬 프록시가 기본 탑재되어 별도 설정 없이 바로 무료 모델을 전환해 대화할 수 있습니다. DeepSeek 공식 API Key를 넣으면 딥 씽킹, 웹 검색, 스트리밍 TTS도 바로 열립니다.',
+      'f1.tag': 'OurFreeModel v2.9.0 · 즉시 사용',
+      'f2.title': '24문항 심층 설문 + MBTI 페르소나 스튜디오',
+      'f2.desc': '천편일률적인 시스템 프롬프트에서 벗어나세요. 24개 관계·화법 설문과 12문항 MBTI 테스트로 첫인상, 말투, 거리감, 감정 반응 리듬까지 섬세하게 완성합니다.',
+      'f2.tag': '24Q 스튜디오 · MBTI 4축',
+      'f3.title': '과거 대화 가져오기 & 로컬 Raw RAG 기억',
+      'f3.desc': 'DeepSeek 내보내기 ZIP, JSONL, Markdown, TXT 기록을 그대로 끌어다 놓으면 로컬 IndexedDB에 저장됩니다. 무설정 BM25 검색은 물론 임베딩 연결 시 시맨틱 하이브리드 기억 회상으로 업그레이드됩니다.',
+      'f3.tag': '100% 로컬 IndexedDB · 하이브리드 RAG',
+      'f4.title': 'CC-Switch: 모델은 바꿔도 영혼은 그대로',
+      'f4.desc': 'OpenAI와 Anthropic 프로토콜을 모두 지원하며 SiliconFlow, OpenRouter, 로컬 Ollama 템플릿을 제공합니다. /models 원클릭 불러오기로 상단 바에서 두뇌만 즉시 교체할 수 있습니다.',
+      'f4.tag': 'OpenAI / Anthropic · 원클릭 동기화',
+      'f5.title': '커스텀 TTS & 3~15초 음성 클로닝',
+      'f5.desc': 'DeepSeek 공식 TTS, SiliconFlow CosyVoice2, OpenAI TTS, 로컬 Fish-Speech를 지원합니다. 3~15초 참고 음성만 올리면 나만의 목소리를 복제하고 자동 읽기까지 켤 수 있습니다.',
+      'f5.tag': 'CosyVoice2 · Fish-Speech · 자동 읽기',
+      'f6.title': 'PC · 태블릿 · 스마트폰 완벽 반응형 UI',
+      'f6.desc': '모바일과 태블릿 가로/세로 화면에 맞춘 블러 드로어 사이드바, 하단 시트 모달, 노치 세이프 에어리어 및 줌 방지 입력창을 제공하며 서버리스 정적 패키지도 지원합니다.',
+      'f6.tag': 'v0.1.5 반응형 · 가로 스크롤 제로',
+      'dl.eyebrow': 'DOWNLOAD & DEPLOY',
+      'dl.title': 'DeepSeek Persona v0.1.5 다운로드',
+      'dl.sub': '관리자 권한과 환경 설정이 필요 없는 단일 Windows 설치 파일과 정적 패키지, 전체 오픈소스를 제공합니다.',
+      'dl.winBadge': '★ 추천 · Windows 10 / 11 (x64)',
+      'dl.winTitle': 'Windows 원클릭 설치 파일',
+      'dl.winDesc': '더블 클릭만으로 설치 완료. 전용 Node.js 런타임, 프로덕션 UI, OurFreeModel 서비스가 내장되어 시스템 트레이에서 조용히 실행됩니다.',
+      'dl.winL1': '순수 오프라인 격리: 외부 트래커나 서드파티 SDK 미포함',
+      'dl.winL2': '관리자 권한 불필요, %LOCALAPPDATA%\\DeepSeekPersona 에 깔끔 설치',
+      'dl.winL3': '트레이 아이콘에서 재시작, 로그 확인, 깔끔한 삭제 지원',
+      'dl.btnGlobal': '⬇ 직접 다운로드 (35.6 MB)',
+      'dl.btnReleases': '전체 릴리스 보기',
+      'dl.btnCnMirror': '⚡ 고속 미러 다운로드 (35.6 MB)',
+      'dl.devBadge': '정적 패키지 & 오픈소스 실행',
+      'dl.devTitle': '정적 웹 패키지 / 소스 코드 실행',
+      'dl.devDesc': '서버 없는 정적 호스팅용 ZIP을 내려받거나 macOS / Linux / Windows에서 pnpm으로 직접 실행할 수 있습니다.',
+      'dl.btnToy': '⬇ 정적 ZIP 다운로드 (1.89 MB)',
+      'dl.btnSource': 'GitHub 소스 보기',
+      'steps.eyebrow': 'QUICK START',
+      'steps.title': '단 3단계로 바로 시작하기',
+      's1.title': '원클릭 설치 및 자동 실행',
+      's1.desc': '설치 파일을 실행하면 트레이에서 로컬 서비스가 자동 시작되고 브라우저가 열리며, 기본 무료 모델로 즉시 대화할 수 있습니다.',
+      's2.title': '페르소나 제작 또는 대화 불러오기',
+      's2.desc': '24문항 + MBTI 스튜디오로 나만의 페르소나를 만들거나 기존 대화 기록을 가져와 로컬 Raw RAG에 기억시키세요.',
+      's3.title': '원하는 모델과 목소리 연결',
+      's3.desc': 'CC-Switch로 DeepSeek 공식, OpenRouter, SiliconFlow, Ollama를 자유롭게 전환하고 커스텀 음성 클로닝을 켜 보세요.',
+      'faq.title': '자주 묻는 질문',
+      'faq.q1': '완전 무료인가요? API Key를 꼭 사야 하나요?',
+      'faq.a1': '앱 자체는 MIT 오픈소스로 완전 무료입니다. Windows 설치 파일에 OurFreeModel 무료 모델 풀이 기본 포함되어 있어 API Key 없이도 바로 대화할 수 있으며, 원할 때만 공식 또는 서드파티 API Key를 연결하면 됩니다.',
+      'faq.q2': '내 대화 기록, 페르소나, 음성 파일이 개발자 서버로 전송되나요?',
+      'faq.a2': '아니요. 개발자 백엔드 서버 자체가 존재하지 않습니다. 모든 대화, Raw RAG 기억 조각, 페르소나, 참고 음성은 100% 사용자 기기의 브라우저 IndexedDB에만 저장되며 요청은 사용자가 선택한 모델 제공사로만 직접 전달됩니다.',
+      'faq.q3': 'Windows에서 미리 Node.js나 Python을 설치해야 하나요?',
+      'faq.a3': '필요 없습니다. v0.1.5 설치 파일에 전용 경량 Node.js 런타임이 내장되어 있어 시스템 환경 변수를 건드리지 않으며 관리자 권한 없이 깔끔하게 설치·제거됩니다.',
+      'faq.q4': '스마트폰이나 태블릿(iPad / 안드로이드 패드)에서도 쓸 수 있나요?',
+      'faq.a4': '네. v0.1.5는 스마트폰과 태블릿 가로/세로 화면에 맞춘 반응형 드로어, 바텀 시트 모달, 세이프 에어리어 대응을 모두 완료했습니다.',
+      'footer.note': 'deepseek-ai/chat-demo 기반으로 제작',
+      'footer.cinema': '전체 화면 3D 시어터',
+      'footer.releases': 'Releases v0.1.5',
+      aspectTo9x16: '세로 9:16 전환',
+      aspectTo16x9: '가로 16:9 전환',
+      chapters: ['01 프로젝트 소개', '02 25+무료 모델', '03 딥 씽킹', '04 MBTI 스튜디오', '05 Raw RAG 기억', '06 CC-Switch', '07 음성 클로닝', '08 원클릭 설치'],
+    },
+  };
+
+  const CHAPTER_TIMES = [0.0, 11.83, 18.40, 27.03, 35.42, 46.53, 53.20, 60.99];
+  const DURATION = 71.5;
+
+  const viewport = document.getElementById('stage-viewport');
+  const stageBox = document.getElementById('stage-box');
   const iframe = document.getElementById('cinema-frame');
+  const overlay = document.getElementById('stage-overlay');
   const audio = document.getElementById('master-audio');
-  const curtain = document.getElementById('start-curtain');
   const btnStart = document.getElementById('btn-start');
   const btnPlay = document.getElementById('btn-play');
   const btnMute = document.getElementById('btn-mute');
@@ -187,35 +1372,98 @@
   const scrubFill = document.getElementById('scrub-fill');
   const tcEl = document.getElementById('tc');
   const chWrap = document.getElementById('chapters');
+  const cnBtn = document.getElementById('btn-dl-cn');
 
-  let mode = window.innerHeight > window.innerWidth ? '9x16' : '16x9';
+  let currentLang = 'zh';
+  let mode = window.innerWidth <= 640 ? '9x16' : '16x9';
   let frameReady = false;
   let playing = false;
   let virtualTime = 2.2;
 
-  CHAPTERS.forEach((ch, idx) => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'ch-pill' + (idx === 0 ? ' active' : '');
-    b.textContent = ch.label;
-    b.onclick = () => seekTo(ch.t);
-    chWrap.appendChild(b);
+  function detectLang() {
+    const q = new URLSearchParams(window.location.search).get('lang');
+    if (q && I18N[q]) return q;
+    try {
+      const saved = localStorage.getItem('dsp_site_lang');
+      if (saved && I18N[saved]) return saved;
+    } catch {}
+    const navLang = (navigator.language || 'zh').toLowerCase();
+    if (navLang.startsWith('ja')) return 'ja';
+    if (navLang.startsWith('ko')) return 'ko';
+    if (navLang.startsWith('zh')) return 'zh';
+    return 'en';
+  }
+
+  function renderChapters() {
+    const labels = I18N[currentLang].chapters;
+    chWrap.innerHTML = '';
+    CHAPTER_TIMES.forEach((t, idx) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'ch-pill';
+      b.textContent = labels[idx];
+      b.onclick = () => seekTo(t);
+      chWrap.appendChild(b);
+    });
+    updateActiveChapter();
+  }
+
+  function applyLang(lang) {
+    if (!I18N[lang]) return;
+    currentLang = lang;
+    const dict = I18N[lang];
+    document.documentElement.lang = dict.htmlLang;
+    document.title = dict.pageTitle;
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) metaDesc.setAttribute('content', dict.pageDesc);
+
+    document.querySelectorAll('[data-i18n]').forEach((el) => {
+      const key = el.getAttribute('data-i18n');
+      if (key && dict[key] !== undefined) el.textContent = dict[key];
+    });
+
+    if (DOWNLOAD_CONFIG.cnMirrorUrl) {
+      cnBtn.href = DOWNLOAD_CONFIG.cnMirrorUrl;
+      cnBtn.textContent = dict['dl.btnCnMirror'];
+    } else {
+      cnBtn.href = 'https://github.com/zhou1736948757-cpu/deepseek-persona-chat/releases/latest';
+      cnBtn.textContent = dict['dl.btnReleases'];
+    }
+
+    document.querySelectorAll('.lang-btn').forEach((btn) => {
+      btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+    });
+
+    btnAspect.textContent = mode === '9x16' ? dict.aspectTo16x9 : dict.aspectTo9x16;
+    renderChapters();
+
+    try { localStorage.setItem('dsp_site_lang', lang); } catch {}
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('lang', lang);
+      window.history.replaceState({}, '', url.toString());
+    } catch {}
+  }
+
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    btn.addEventListener('click', () => applyLang(btn.getAttribute('data-lang')));
   });
 
   function updateLayout() {
+    viewport.classList.toggle('portrait', mode === '9x16');
     const natW = mode === '9x16' ? 1080 : 1920;
     const natH = mode === '9x16' ? 1920 : 1080;
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
+    const rect = viewport.getBoundingClientRect();
+    const vw = Math.max(200, rect.width);
+    const vh = Math.max(200, rect.height);
     const scale = Math.min(vw / natW, vh / natH);
-    const dispW = Math.round(natW * scale);
-    const dispH = Math.round(natH * scale);
-    frameBox.style.width = `${dispW}px`;
-    frameBox.style.height = `${dispH}px`;
+    stageBox.style.width = `${Math.round(natW * scale)}px`;
+    stageBox.style.height = `${Math.round(natH * scale)}px`;
     iframe.style.width = `${natW}px`;
     iframe.style.height = `${natH}px`;
     iframe.style.transform = `scale(${scale})`;
-    btnAspect.textContent = mode === '9x16' ? '切换横屏 16:9' : '切换竖屏 9:16';
+    const dict = I18N[currentLang];
+    btnAspect.textContent = mode === '9x16' ? dict.aspectTo16x9 : dict.aspectTo9x16;
   }
 
   function loadMode(newMode) {
@@ -239,6 +1487,12 @@
     return `${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
   }
 
+  function updateActiveChapter() {
+    let activeIdx = 0;
+    CHAPTER_TIMES.forEach((t, i) => { if (virtualTime >= t) activeIdx = i; });
+    chWrap.querySelectorAll('.ch-pill').forEach((el, i) => el.classList.toggle('active', i === activeIdx));
+  }
+
   function renderTime(t) {
     virtualTime = Math.max(0, Math.min(DURATION, t));
     if (frameReady) {
@@ -246,20 +1500,11 @@
     }
     scrubFill.style.width = `${(virtualTime / DURATION) * 100}%`;
     tcEl.textContent = `${fmt(virtualTime)} / 01:11`;
-    let activeIdx = 0;
-    CHAPTERS.forEach((c, i) => { if (virtualTime >= c.t) activeIdx = i; });
-    chWrap.querySelectorAll('.ch-pill').forEach((el, i) => el.classList.toggle('active', i === activeIdx));
-  }
-
-  function seekTo(t) {
-    virtualTime = Math.max(0, Math.min(DURATION - 0.05, t));
-    audio.currentTime = virtualTime;
-    renderTime(virtualTime);
-    if (!playing) startPlayback(false);
+    updateActiveChapter();
   }
 
   function startPlayback(resetIfEnd = true) {
-    curtain.classList.add('hidden');
+    overlay.classList.add('hidden');
     if (resetIfEnd && (virtualTime >= DURATION - 0.2 || virtualTime === 2.2)) {
       virtualTime = 0;
       audio.currentTime = 0;
@@ -269,6 +1514,13 @@
     playing = true;
     btnPlay.textContent = '⏸';
     audio.play().catch(() => {});
+  }
+
+  function seekTo(t) {
+    virtualTime = Math.max(0, Math.min(DURATION - 0.05, t));
+    audio.currentTime = virtualTime;
+    renderTime(virtualTime);
+    if (!playing) startPlayback(false);
   }
 
   function togglePlay() {
@@ -317,6 +1569,7 @@
     requestAnimationFrame(tick);
   }
 
+  applyLang(detectLang());
   loadMode(mode);
   requestAnimationFrame(tick);
 })();
