@@ -125,8 +125,12 @@ const DEFAULT_CUSTOM_PROFILES: CustomLlmProfile[] = [
   },
 ]
 
+const isToyStaticEnv = (): boolean =>
+  (typeof __TOY_BUILD__ !== 'undefined' && __TOY_BUILD__) ||
+  (typeof window !== 'undefined' && Boolean(window.toy))
+
 const DEFAULT_PROVIDER: ProviderConfig = {
-  chatProvider: 'ourfree',
+  chatProvider: isToyStaticEnv() ? 'deepseek' : 'ourfree',
   ourFreeBaseUrl: BUILTIN_OFM_BASE_URL,
   ourFreeApiKey: '',
   ourFreeModel: OURFREE_DEFAULT_MODELS[0],
@@ -197,7 +201,15 @@ export const useProviderStore = create<ProviderConfig>(() => loadProvider())
 
 const persist = (next: ProviderConfig) => {
   try {
-    const { builtInOfm: _ignored, ...persisted } = next
+    const persisted = {
+      chatProvider: next.chatProvider,
+      ourFreeBaseUrl: next.ourFreeBaseUrl,
+      ourFreeApiKey: next.ourFreeApiKey,
+      ourFreeModel: next.ourFreeModel,
+      ourFreeModels: next.ourFreeModels,
+      customProfiles: next.customProfiles,
+      activeCustomProfileId: next.activeCustomProfileId,
+    }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(persisted))
   } catch {
     // 忽略本地存储异常
@@ -332,6 +344,24 @@ const pickPreferredFreeModel = (models: string[], current: string): string => {
 
 /** 启动时自动探测项目内置的 OurFreeModel 服务并同步实时免费模型清单。 */
 export const initBuiltInOurFreeModel = async (): Promise<void> => {
+  // B站 Toy 纯静态环境下无本机 Node 桥接服务，跳过 /__ofm/status 探测避免 404
+  if (isToyStaticEnv()) {
+    const cur = useProviderStore.getState()
+    if (cur.chatProvider === 'ourfree' && cur.ourFreeBaseUrl === BUILTIN_OFM_BASE_URL) {
+      updateProviderConfig({ chatProvider: 'deepseek' })
+    }
+    useProviderStore.setState({
+      builtInOfm: {
+        checked: true,
+        running: false,
+        version: '',
+        managementUrl: '',
+        localApiUrl: '',
+        error: 'B站 Toy 在线静态版请使用 DeepSeek Key 或自定义 LLM（可在 B站云存档同步）',
+      },
+    })
+    return
+  }
   try {
     const resp = await fetch('/__ofm/status', { cache: 'no-store' })
     if (!resp.ok) {

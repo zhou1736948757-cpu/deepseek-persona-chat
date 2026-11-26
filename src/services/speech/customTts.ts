@@ -137,6 +137,25 @@ export const setTtsEngineMode = (engineMode: TtsEngineMode) => {
   persist({ ...useCustomTtsStore.getState(), engineMode })
 }
 
+/** 从 B站云存档恢复语音配置档（保留本地 IndexedDB 参考音频不变）。 */
+export const hydrateCustomTtsFromCloud = (
+  patch: Partial<Pick<CustomTtsState, 'engineMode' | 'profiles' | 'activeProfileId'>>
+) => {
+  const prev = useCustomTtsStore.getState()
+  const profiles =
+    Array.isArray(patch.profiles) && patch.profiles.length > 0 ? patch.profiles : prev.profiles
+  const activeProfileId =
+    typeof patch.activeProfileId === 'string' && profiles.some((p) => p.id === patch.activeProfileId)
+      ? patch.activeProfileId
+      : profiles[0].id
+  persist({
+    ...prev,
+    engineMode: patch.engineMode ?? prev.engineMode,
+    profiles,
+    activeProfileId,
+  })
+}
+
 export const getActiveTtsProfile = (): CustomTtsProfile => {
   const { profiles, activeProfileId } = useCustomTtsStore.getState()
   return profiles.find((p) => p.id === activeProfileId) ?? profiles[0] ?? DEFAULT_PROFILES[0]

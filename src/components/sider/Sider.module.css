@@ -205,6 +205,27 @@
   position: absolute;
   inset: 0;
   z-index: 799;
+  background-color: rgba(0, 0, 0, 0.36);
+  backdrop-filter: blur(2px);
+}
+
+/* Pad 横屏（1024px–1279px）：略微收窄固定侧栏，同时保持品牌名完整不省略 */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .sider:not(.mobile) {
+    width: 248px;
+  }
+
+  .sider:not(.mobile) .appName {
+    font-size: 18px;
+  }
+}
+
+/* Pad 竖屏抽屉（768px–1023px）：更舒适的 320px 宽抽屉与细腻阴影 */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .mobile {
+    width: 320px;
+    box-shadow: 12px 0 36px rgba(0, 0, 0, 0.24);
+  }
 }
 
 .mobile {

@@ -1,5 +1,6 @@
 node_modules/
-dist/
+dist
+dist-toy/
 build/
 .pnpm-store/
 .cache/
@@ -12,4 +13,5 @@ tmp/
 
 .ofm-data/
 release/
+showcase/
 vendor/dsh-our-free-model/

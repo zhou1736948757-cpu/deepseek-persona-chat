@@ -684,8 +684,12 @@ const ImportTab = () => {
 }
 
 const MemoryTab = () => {
+  const personas = usePersonaStore((s) => s.personas)
   const activePersonaId = usePersonaStore((s) => s.activePersonaId)
-  const persona = useMemo(() => getActivePersona(), [activePersonaId])
+  const persona = useMemo(
+    () => personas.find((p) => p.id === activePersonaId) ?? personas[0] ?? getActivePersona(),
+    [personas, activePersonaId]
+  )
   const apiKey = useSettings((s) => s.apiKey)
   const rag = useRawRagConfig()
 

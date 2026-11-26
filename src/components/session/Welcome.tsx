@@ -1,4 +1,4 @@
-import { useIsMobile } from '../../app/viewport.js'
+import { useIsCompactSider, useIsMobile } from '../../app/viewport.js'
 import { useTranslate } from '../../i18n/index.js'
 import { openOnboarding, openPersonaManager, usePersonaStore } from '../../services/persona/store.js'
 import {
@@ -17,6 +17,7 @@ import styles from './Welcome.module.css'
 export const Welcome = () => {
   const t = useTranslate()
   const isMobile = useIsMobile()
+  const isCompactSider = useIsCompactSider()
   const personas = usePersonaStore((s) => s.personas)
   const activePersonaId = usePersonaStore((s) => s.activePersonaId)
   const activePersona = personas.find((p) => p.id === activePersonaId) ?? personas[0]
@@ -38,7 +39,7 @@ export const Welcome = () => {
 
   return (
     <div className={styles.container}>
-      {isMobile ? <MobileHeader /> : null}
+      {isCompactSider ? <MobileHeader /> : null}
       <div className={styles.welcome}>
         {activePersona ? (
           <div className={personaStyles.welcomeMinimal}>

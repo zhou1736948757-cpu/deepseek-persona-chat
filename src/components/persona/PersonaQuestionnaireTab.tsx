@@ -189,7 +189,7 @@ export const PersonaQuestionnaireTab = () => {
           ) : null}
 
           {current.id === 'q01_name' ? (
-            <div className={styles.formGrid} style={{ gridTemplateColumns: '1fr 1fr' }}>
+            <div className={styles.formGridEqual}>
               <input
                 type="text"
                 className={styles.input}

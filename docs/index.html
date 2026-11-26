@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>DeepSeek Persona — 把深爱的 Ta 接回本地</title>
+<meta name="description" content="开源免费本地 AI 情感陪伴客户端：内置 25+ 免费模型、24 题 MBTI 捏人、旧聊天记录导入与本地 Raw RAG 记忆、CC-Switch 换模型不换灵魂、3-15 秒声音克隆、Windows 一键安装。" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    background: #08090C; color: #F9FAFB;
+    font-family: "MiSans", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+  }
+
+  #stage-wrap {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: #08090C; overflow: hidden;
+  }
+
+  #frame-box {
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.85);
+    background: #08090C;
+  }
+
+  #cinema-frame {
+    position: absolute; left: 0; top: 0;
+    border: 0; transform-origin: 0 0;
+    pointer-events: none;
+  }
+
+  /* Top-right minimal brand / download action bar */
+  .top-actions {
+    position: fixed; top: 18px; right: 20px; z-index: 40;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .pill-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: 999px;
+    font-size: 13px; font-weight: 500; text-decoration: none; cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(21, 21, 23, 0.78); backdrop-filter: blur(14px);
+    color: #E5E7EB; transition: all 0.18s ease;
+  }
+  .pill-btn:hover { background: rgba(44, 44, 46, 0.92); border-color: rgba(255, 255, 255, 0.25); color: #FFF; }
+  .pill-btn.primary {
+    background: #5686FE; border-color: #5686FE; color: #FFF; font-weight: 600;
+  }
+  .pill-btn.primary:hover { background: #679EFE; border-color: #679EFE; }
+
+  /* Start Cinema Curtain (required for browser autoplay-with-audio policy) */
+  #start-curtain {
+    position: fixed; inset: 0; z-index: 50;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 28px; text-align: center;
+    background: radial-gradient(ellipse 70% 60% at 50% 42%, rgba(28, 34, 52, 0.72), rgba(8, 9, 12, 0.94) 72%);
+    backdrop-filter: blur(16px);
+    transition: opacity 0.45s ease, visibility 0.45s ease;
+  }
+  #start-curtain.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+  .emblem {
+    width: 68px; height: 68px; border-radius: 19px;
+    background: #1B1C22; border: 1px solid rgba(86, 134, 254, 0.45);
+    display: flex; align-items: center; justify-content: center; margin-bottom: 22px;
+  }
+  .start-title { font-size: clamp(32px, 5vw, 54px); font-weight: 700; letter-spacing: -0.025em; }
+  .start-title span { color: #5686FE; }
+  .start-sub { font-size: clamp(14px, 2vw, 18px); color: #ADB2B8; margin-top: 10px; max-width: 560px; line-height: 1.6; }
+  .start-play {
+    margin-top: 28px; padding: 14px 32px; border-radius: 999px; border: none;
+    background: #5686FE; color: #FFFFFF; font-size: 16px; font-weight: 600;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 10px;
+    box-shadow: 0 12px 34px rgba(86, 134, 254, 0.35);
+    transition: transform 0.18s ease, background 0.18s ease;
+  }
+  .start-play:hover { background: #679EFE; transform: translateY(-1px); }
+  .start-meta { margin-top: 14px; font-size: 12.5px; color: #81858C; }
+  .start-links { margin-top: 26px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+  /* Bottom Cinema Scrubber Bar */
+  #controls {
+    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 40;
+    width: min(760px, calc(100vw - 24px));
+    padding: 10px 16px; border-radius: 16px;
+    background: rgba(21, 21, 23, 0.80); backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    display: flex; flex-direction: column; gap: 8px;
+    transition: opacity 0.25s ease;
+  }
+  .ctrl-row { display: flex; align-items: center; gap: 12px; }
+  .ctrl-btn {
+    border: none; background: transparent; color: #F9FAFB; font-size: 14px;
+    cursor: pointer; padding: 4px 8px; border-radius: 8px;
+  }
+  .ctrl-btn:hover { background: rgba(255, 255, 255, 0.08); }
+  .scrub {
+    flex: 1; height: 5px; border-radius: 99px; background: rgba(255, 255, 255, 0.14);
+    cursor: pointer; position: relative; overflow: hidden;
+  }
+  .scrub-fill { height: 100%; width: 0%; background: #5686FE; border-radius: 99px; }
+  .tc { font-family: "Cascadia Code", monospace; font-size: 12px; color: #ADB2B8; min-width: 82px; text-align: right; }
+  .chapters { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+  .chapters::-webkit-scrollbar { display: none; }
+  .ch-pill {
+    padding: 3px 9px; border-radius: 999px; font-size: 11.5px; white-space: nowrap;
+    border: 1px solid rgba(255, 255, 255, 0.1); background: transparent; color: #ADB2B8; cursor: pointer;
+  }
+  .ch-pill.active { background: #283142; border-color: #4868B2; color: #D3E2FF; }
+
+  @media (max-width: 640px) {
+    .top-actions { top: 12px; right: 12px; gap: 6px; }
+    .pill-btn { padding: 6px 11px; font-size: 12px; }
+    #controls { bottom: 12px; padding: 8px 12px; }
+  }
+</style>
+</head>
+<body>
+<div id="stage-wrap">
+  <div id="frame-box">
+    <iframe id="cinema-frame" title="DeepSeek Persona 3D Showcase"></iframe>
+  </div>
+</div>
+
+<div class="top-actions">
+  <button class="pill-btn" id="btn-aspect" type="button">切换竖屏 9:16</button>
+  <a class="pill-btn" href="https://github.com/zhou1736948757-cpu/deepseek-persona-chat" target="_blank" rel="noreferrer">GitHub 源码</a>
+  <a class="pill-btn primary" href="https://github.com/zhou1736948757-cpu/deepseek-persona-chat/releases/latest" target="_blank" rel="noreferrer">⬇ Windows 一键安装包</a>
+</div>
+
+<div id="start-curtain">
+  <div class="emblem">
+    <svg width="36" height="36" viewBox="0 0 72 72" fill="none">
+      <path d="M36 8L42.5 29.5L64 36L42.5 42.5L36 64L29.5 42.5L8 36L29.5 29.5L36 8Z" fill="#F9FAFB"/>
+      <circle cx="53" cy="19" r="4.5" fill="#5686FE"/>
+    </svg>
+  </div>
+  <div class="start-title">DeepSeek <span>Persona</span></div>
+  <div class="start-sub">把深爱的 Ta 真正接回本地。实时 60fps 3D 交互放映 · 附完整项目介绍旁白与定制配乐（71 秒）。</div>
+  <button class="start-play" id="btn-start" type="button">▶ 开启有声放映</button>
+  <div class="start-meta">自动适配电脑横屏 16:9 / 手机竖屏 9:16 · 零视频压缩失真</div>
+  <div class="start-links">
+    <a class="pill-btn primary" href="https://github.com/zhou1736948757-cpu/deepseek-persona-chat/releases/latest" target="_blank" rel="noreferrer">下载 Windows 一键安装包 (35.6 MB)</a>
+    <a class="pill-btn" href="https://github.com/zhou1736948757-cpu/deepseek-persona-chat" target="_blank" rel="noreferrer">查看开源仓库</a>
+  </div>
+</div>
+
+<div id="controls">
+  <div class="ctrl-row">
+    <button class="ctrl-btn" id="btn-play" type="button">▶</button>
+    <div class="scrub" id="scrub"><div class="scrub-fill" id="scrub-fill"></div></div>
+    <button class="ctrl-btn" id="btn-mute" type="button">🔊</button>
+    <span class="tc" id="tc">00:00 / 01:11</span>
+  </div>
+  <div class="chapters" id="chapters"></div>
+</div>
+
+<audio id="master-audio" src="./master_audio_71s.mp3" preload="auto"></audio>
+
+<script>
+(() => {
+  const DURATION = 71.5;
+  const CHAPTERS = [
+    { t: 0.0,   label: '01 项目介绍' },
+    { t: 11.83, label: '02 25+免费池' },
+    { t: 18.40, label: '03 深度思考' },
+    { t: 27.03, label: '04 MBTI 捏人' },
+    { t: 35.42, label: '05 回忆 Raw RAG' },
+    { t: 46.53, label: '06 CC-Switch' },
+    { t: 53.20, label: '07 声音克隆' },
+    { t: 60.99, label: '08 一键安装' },
+  ];
+
+  const frameBox = document.getElementById('frame-box');
+  const iframe = document.getElementById('cinema-frame');
+  const audio = document.getElementById('master-audio');
+  const curtain = document.getElementById('start-curtain');
+  const btnStart = document.getElementById('btn-start');
+  const btnPlay = document.getElementById('btn-play');
+  const btnMute = document.getElementById('btn-mute');
+  const btnAspect = document.getElementById('btn-aspect');
+  const scrub = document.getElementById('scrub');
+  const scrubFill = document.getElementById('scrub-fill');
+  const tcEl = document.getElementById('tc');
+  const chWrap = document.getElementById('chapters');
+
+  let mode = window.innerHeight > window.innerWidth ? '9x16' : '16x9';
+  let frameReady = false;
+  let playing = false;
+  let virtualTime = 2.2;
+
+  CHAPTERS.forEach((ch, idx) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'ch-pill' + (idx === 0 ? ' active' : '');
+    b.textContent = ch.label;
+    b.onclick = () => seekTo(ch.t);
+    chWrap.appendChild(b);
+  });
+
+  function updateLayout() {
+    const natW = mode === '9x16' ? 1080 : 1920;
+    const natH = mode === '9x16' ? 1920 : 1080;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const scale = Math.min(vw / natW, vh / natH);
+    const dispW = Math.round(natW * scale);
+    const dispH = Math.round(natH * scale);
+    frameBox.style.width = `${dispW}px`;
+    frameBox.style.height = `${dispH}px`;
+    iframe.style.width = `${natW}px`;
+    iframe.style.height = `${natH}px`;
+    iframe.style.transform = `scale(${scale})`;
+    btnAspect.textContent = mode === '9x16' ? '切换横屏 16:9' : '切换竖屏 9:16';
+  }
+
+  function loadMode(newMode) {
+    mode = newMode;
+    frameReady = false;
+    updateLayout();
+    iframe.src = mode === '9x16' ? './cinema-3d-vertical.html' : './cinema-3d.html';
+  }
+
+  iframe.addEventListener('load', () => {
+    try {
+      iframe.contentWindow.__EXTERNAL_CLOCK__ = true;
+      frameReady = typeof iframe.contentWindow.__renderAt === 'function';
+      if (frameReady) iframe.contentWindow.__renderAt(virtualTime);
+    } catch {}
+  });
+
+  function fmt(sec) {
+    const s = Math.max(0, Math.floor(sec));
+    const m = Math.floor(s / 60);
+    return `${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+  }
+
+  function renderTime(t) {
+    virtualTime = Math.max(0, Math.min(DURATION, t));
+    if (frameReady) {
+      try { iframe.contentWindow.__renderAt(virtualTime); } catch {}
+    }
+    scrubFill.style.width = `${(virtualTime / DURATION) * 100}%`;
+    tcEl.textContent = `${fmt(virtualTime)} / 01:11`;
+    let activeIdx = 0;
+    CHAPTERS.forEach((c, i) => { if (virtualTime >= c.t) activeIdx = i; });
+    chWrap.querySelectorAll('.ch-pill').forEach((el, i) => el.classList.toggle('active', i === activeIdx));
+  }
+
+  function seekTo(t) {
+    virtualTime = Math.max(0, Math.min(DURATION - 0.05, t));
+    audio.currentTime = virtualTime;
+    renderTime(virtualTime);
+    if (!playing) startPlayback(false);
+  }
+
+  function startPlayback(resetIfEnd = true) {
+    curtain.classList.add('hidden');
+    if (resetIfEnd && (virtualTime >= DURATION - 0.2 || virtualTime === 2.2)) {
+      virtualTime = 0;
+      audio.currentTime = 0;
+    } else {
+      audio.currentTime = virtualTime;
+    }
+    playing = true;
+    btnPlay.textContent = '⏸';
+    audio.play().catch(() => {});
+  }
+
+  function togglePlay() {
+    if (playing) {
+      playing = false;
+      audio.pause();
+      btnPlay.textContent = '▶';
+    } else {
+      startPlayback(virtualTime >= DURATION - 0.2);
+    }
+  }
+
+  btnStart.addEventListener('click', () => startPlayback(true));
+  btnPlay.addEventListener('click', togglePlay);
+  btnMute.addEventListener('click', () => {
+    audio.muted = !audio.muted;
+    btnMute.textContent = audio.muted ? '🔇' : '🔊';
+  });
+  btnAspect.addEventListener('click', () => loadMode(mode === '9x16' ? '16x9' : '9x16'));
+
+  scrub.addEventListener('click', (e) => {
+    const rect = scrub.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    seekTo(ratio * DURATION);
+  });
+
+  audio.addEventListener('ended', () => {
+    playing = false;
+    btnPlay.textContent = '↻';
+    renderTime(DURATION);
+  });
+
+  window.addEventListener('resize', updateLayout);
+
+  let lastTs = null;
+  function tick(ts) {
+    if (playing) {
+      if (!audio.paused && Number.isFinite(audio.currentTime)) {
+        renderTime(audio.currentTime);
+      } else if (lastTs !== null) {
+        renderTime(virtualTime + (ts - lastTs) / 1000);
+        if (virtualTime >= DURATION) { playing = false; btnPlay.textContent = '↻'; }
+      }
+    }
+    lastTs = ts;
+    requestAnimationFrame(tick);
+  }
+
+  loadMode(mode);
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

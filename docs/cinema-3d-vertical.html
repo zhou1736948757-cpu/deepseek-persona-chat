@@ -1,0 +1,1149 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>DeepSeek Persona — Real-UI 3D Cinema (9:16 Vertical · 49s)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 1080px; height: 1920px; overflow: hidden;
+    background: #08090C;
+    font-family: "MiSans", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    color: #F9FAFB;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  #viewport {
+    position: relative; width: 1080px; height: 1920px; overflow: hidden;
+    perspective: 1750px; perspective-origin: 50% 50%;
+    background: #08090C;
+  }
+
+  #studio-canvas, #lens-canvas {
+    position: absolute; inset: 0; width: 1080px; height: 1920px; pointer-events: none;
+  }
+  #studio-canvas { z-index: 1; }
+  #lens-canvas { z-index: 12; }
+
+  #camera-rig {
+    position: absolute; left: 50%; top: 50%; width: 0; height: 0; z-index: 5;
+    transform-style: preserve-3d; will-change: transform, opacity;
+  }
+
+  #studio-floor {
+    position: absolute; left: -1200px; top: 432px; width: 2400px; height: 1100px;
+    transform-origin: center top; transform: rotateX(86deg) translateY(-120px);
+    background: radial-gradient(ellipse 52% 48% at 50% 24%, rgba(86, 134, 254, 0.065), rgba(20, 22, 28, 0.25) 48%, rgba(8, 9, 12, 0) 76%);
+    -webkit-mask-image: radial-gradient(ellipse 68% 68% at 50% 28%, black 15%, transparent 74%);
+    mask-image: radial-gradient(ellipse 68% 68% at 50% 28%, black 15%, transparent 74%);
+    pointer-events: none;
+  }
+
+  #monitor-shell {
+    position: absolute; left: -710px; top: -420px; width: 1420px; height: 840px;
+    border-radius: 24px; padding: 11px;
+    background: linear-gradient(155deg, #3A3D45 0%, #202228 24%, #131418 76%, #282B33 100%);
+    box-shadow:
+      0 55px 130px rgba(0, 0, 0, 0.90),
+      0 18px 42px rgba(0, 0, 0, 0.72),
+      0 0 0 1px rgba(255, 255, 255, 0.10),
+      inset 0 1px 0 rgba(255, 255, 255, 0.22),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.85);
+    transform-style: preserve-3d;
+  }
+  .monitor-thickness {
+    position: absolute; inset: 0; border-radius: 24px;
+    background: linear-gradient(180deg, #17191F 0%, #0C0D10 100%);
+    transform: translateZ(-12px);
+    box-shadow: 0 42px 90px rgba(0, 0, 0, 0.92);
+    pointer-events: none;
+  }
+
+  #screen {
+    position: relative; width: 100%; height: 100%; border-radius: 15px;
+    background: #151517; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+    transform-style: preserve-3d;
+  }
+  #app-clip {
+    position: absolute; inset: 0; border-radius: 15px; overflow: hidden;
+    display: flex; background: #151517; will-change: filter;
+  }
+  #screen-glare {
+    position: absolute; inset: 0; border-radius: 15px; pointer-events: none; z-index: 40;
+    opacity: 0.34; transform: translateZ(1px);
+  }
+  #dof-edge-mask {
+    position: absolute; inset: 0; border-radius: 15px; pointer-events: none; z-index: 39;
+    background: radial-gradient(ellipse 68% 66% at 50% 50%, rgba(0,0,0,0) 56%, rgba(6,7,10,0.42) 100%);
+    opacity: 0;
+  }
+
+  /* ===== REAL APP CHROME ===== */
+  .app-sidebar {
+    width: 260px; height: 100%; flex-shrink: 0; background: #1B1B1C;
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 18px 14px 16px; display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .brand-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding: 2px 4px; }
+  .brand-title { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; color: #5686FE; }
+  .sider-collapse-icon { width: 20px; height: 20px; border-radius: 5px; border: 1.5px solid #81858C; position: relative; opacity: 0.7; }
+  .sider-collapse-icon::before { content: ""; position: absolute; left: 5px; top: 0; bottom: 0; width: 1.5px; background: #81858C; }
+  .new-chat-btn {
+    height: 40px; border-radius: 999px; background: #3F4146; border: 1px solid rgba(255, 255, 255, 0.07);
+    color: #F9FAFB; font-size: 13.5px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 7px; margin-bottom: 12px;
+  }
+  .sider-persona {
+    padding: 9px 11px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
+  }
+  .sider-persona.highlight { border-color: #4868B2; background: rgba(86, 134, 254, 0.12); }
+  .avatar-sq {
+    width: 32px; height: 32px; border-radius: 9px; background: rgba(255, 255, 255, 0.08);
+    display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;
+  }
+  .hist-group { font-size: 11.5px; color: #81858C; margin-bottom: 7px; padding-left: 8px; }
+  .hist-item { padding: 8px 10px; border-radius: 9px; font-size: 13px; color: #ADB2B8; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hist-item.active { background: #2C2C2E; color: #F9FAFB; }
+  .sider-footer { border-top: 1px solid rgba(255, 255, 255, 0.06); padding-top: 10px; display: flex; flex-direction: column; gap: 3px; }
+  .sider-btn { padding: 8px 10px; border-radius: 9px; font-size: 13px; color: #CFD3D6; display: flex; align-items: center; justify-content: space-between; }
+  .sider-btn.highlight { background: #283142; color: #D3E2FF; }
+  .green-dot { width: 7px; height: 7px; border-radius: 50%; background: #22C55E; }
+
+  .app-main { flex: 1; height: 100%; display: flex; flex-direction: column; position: relative; padding: 20px 140px 26px; background: #151517; }
+  .top-capsule-wrap { display: flex; justify-content: center; margin-bottom: 10px; }
+  .top-capsule {
+    display: inline-flex; align-items: center; gap: 9px; padding: 6px 14px 6px 8px;
+    border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.12); background: #2C2C2E; font-size: 13px; color: #F9FAFB;
+  }
+  .top-capsule.active { border-color: #4868B2; background: #283142; }
+  .pill-av { width: 22px; height: 22px; border-radius: 50%; background: rgba(255, 255, 255, 0.08); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+
+  .chat-stage { flex: 1; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden; }
+  #welcome-hero { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; }
+  #live-chat { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: 18px; padding-bottom: 18px; opacity: 0; }
+  .msg-user { align-self: flex-end; max-width: 78%; padding: 12px 18px; border-radius: 18px 18px 4px 18px; background: #2C2C2E; border: 1px solid rgba(255, 255, 255, 0.08); color: #F9FAFB; font-size: 15.5px; line-height: 1.55; }
+  .msg-ai { align-self: flex-start; max-width: 86%; padding: 16px 20px; border-radius: 16px; background: #1E1F22; border: 1px solid rgba(255, 255, 255, 0.08); color: #F9FAFB; font-size: 15.5px; line-height: 1.72; }
+  .think-box { margin-bottom: 10px; padding: 9px 13px; border-radius: 10px; background: #26272B; border-left: 2px solid #5686FE; font-size: 12.5px; color: #ADB2B8; }
+  .msg-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .pill-blue-soft { padding: 4px 10px; border-radius: 999px; font-size: 11.5px; background: #283142; border: 1px solid #4868B2; color: #B7C8FE; }
+  .pill-neutral-soft { padding: 4px 10px; border-radius: 999px; font-size: 11.5px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); color: #CFD3D6; }
+
+  .composer { border-radius: 22px; background: #2C2C2E; border: 1px solid rgba(255, 255, 255, 0.10); padding: 15px 18px 13px; }
+  .composer-input { font-size: 15.5px; color: #F9FAFB; min-height: 36px; line-height: 1.5; margin-bottom: 12px; }
+  .composer-bar { display: flex; align-items: center; justify-content: space-between; }
+  .composer-left { display: flex; align-items: center; gap: 8px; }
+  .c-pill { height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.14); color: #CFD3D6; font-size: 12.5px; display: inline-flex; align-items: center; gap: 5px; }
+  .c-pill.active { border-color: #4868B2; background: #283142; color: #679EFE; }
+  .eff-seg { display: inline-flex; align-items: center; padding: 2px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.12); background: #212124; gap: 2px; }
+  .eff-seg span { padding: 4px 9px; border-radius: 999px; font-size: 12px; color: #81858C; }
+  .eff-seg span.active { background: #283142; color: #679EFE; font-weight: 600; }
+  .composer-right { display: flex; align-items: center; gap: 11px; }
+  .icon-muted { color: #ADB2B8; font-size: 15px; opacity: 0.85; }
+  .send-btn { width: 34px; height: 34px; border-radius: 50%; background: #5686FE; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; }
+
+  /* ===== VERTICAL-OPTIMIZED REAL MODALS (ALL <= 860px WIDE -> 100% INSIDE 1080px!) ===== */
+  .z-float { position: absolute; transform-style: preserve-3d; pointer-events: none; opacity: 0; will-change: transform, opacity; }
+  .real-modal {
+    background: #1D1E22; border: 1px solid rgba(255, 255, 255, 0.13);
+    box-shadow: 0 36px 86px rgba(0, 0, 0, 0.86), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    border-radius: 20px; overflow: hidden;
+  }
+
+  #z-model-menu {
+    left: 510px; top: 66px; width: 456px; border-radius: 16px; padding: 12px;
+    background: #232429; border: 1px solid rgba(255, 255, 255, 0.13); box-shadow: 0 32px 72px rgba(0, 0, 0, 0.86);
+  }
+  .m-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 13px; border-radius: 11px; margin-bottom: 4px; font-size: 13.5px; color: #CFD3D6; }
+  .m-item.active { background: #283142; border: 1px solid #4868B2; color: #F9FAFB; font-weight: 600; }
+  .m-tag { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.06); color: #ADB2B8; border: 1px solid rgba(255, 255, 255, 0.1); }
+  .m-item.active .m-tag { background: rgba(86, 134, 254, 0.22); color: #B7C8FE; border-color: rgba(86, 134, 254, 0.45); }
+
+  /* Centered at screen X = 725 (monitor offset +15px), width = 860px -> 100% framed in 9:16! */
+  #z-persona-modal { left: 295px; top: 78px; width: 860px; height: 684px; display: flex; flex-direction: column; }
+  #z-cc-modal { left: 300px; top: 78px; width: 850px; height: 684px; display: flex; flex-direction: column; }
+  #z-win-setup { left: 330px; top: 230px; width: 760px; }
+
+  .modal-head { padding: 16px 22px 11px; display: flex; justify-content: space-between; align-items: center; }
+  .modal-title { font-size: 17.5px; font-weight: 600; color: #F9FAFB; }
+  .modal-close { font-size: 18px; color: #81858C; }
+  .real-tabbar { display: flex; gap: 6px; padding: 0 22px 11px; border-bottom: 1px solid rgba(255, 255, 255, 0.07); }
+  .real-tab { padding: 6px 13px; border-radius: 8px; font-size: 12.5px; color: #ADB2B8; border: 1px solid transparent; }
+  .real-tab.active { background: #2C2C2E; color: #F9FAFB; font-weight: 600; border-color: rgba(255, 255, 255, 0.10); }
+  .modal-body { flex: 1; padding: 16px 22px 18px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
+
+  .quiz-nav-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .quiz-secs { display: flex; gap: 5px; }
+  .quiz-sec-btn { padding: 4px 10px; border-radius: 999px; font-size: 11.5px; color: #81858C; border: 1px solid rgba(255, 255, 255, 0.08); }
+  .quiz-sec-btn.active { background: #283142; border-color: #4868B2; color: #B7C8FE; font-weight: 600; }
+  .quiz-track { height: 4px; border-radius: 99px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+  .quiz-fill { height: 100%; background: #5686FE; border-radius: 99px; }
+
+  .opt-card { padding: 15px 17px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.10); background: #26272B; display: flex; flex-direction: column; gap: 6px; }
+  .opt-card.selected { border-color: #5686FE; background: #283142; box-shadow: inset 0 0 0 1px rgba(86, 134, 254, 0.35); }
+  .opt-head { display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 600; color: #F9FAFB; }
+  .opt-check { color: #679EFE; font-size: 16px; font-weight: 700; }
+  .opt-desc { font-size: 12.5px; color: #ADB2B8; }
+
+  .mbti-result-card { padding: 16px 18px; border-radius: 15px; background: #24252A; border: 1px solid rgba(255, 255, 255, 0.10); display: flex; flex-direction: column; gap: 13px; }
+  .mbti-bar-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px 20px; }
+  .mbti-track { height: 7px; border-radius: 99px; background: rgba(255, 255, 255, 0.09); overflow: hidden; margin-top: 5px; }
+  .mbti-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #4868B2, #5686FE); }
+
+  .btn-out { padding: 7px 14px; border-radius: 10px; font-size: 12.5px; color: #CFD3D6; border: 1px solid rgba(255, 255, 255, 0.15); }
+  .btn-pri { padding: 7px 16px; border-radius: 10px; font-size: 12.5px; font-weight: 600; background: #5686FE; color: #FFFFFF; border: 1px solid #5686FE; white-space: nowrap; }
+
+  .dropzone-box { border: 1.5px dashed #4868B2; border-radius: 16px; background: rgba(40, 49, 66, 0.36); padding: 24px 20px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .mem-summary { padding: 13px 16px; border-radius: 14px; background: #24252A; border: 1px solid rgba(255, 255, 255, 0.09); display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .mem-hit-card { padding: 12px 15px; border-radius: 12px; background: #24252A; border: 1px solid rgba(255, 255, 255, 0.09); display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .score-pill { padding: 4px 10px; border-radius: 999px; font-family: "Cascadia Code", monospace; font-size: 11.5px; color: #B7C8FE; background: #283142; border: 1px solid #4868B2; flex-shrink: 0; }
+
+  .real-stepper { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; padding: 0 22px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.07); }
+  .step-item { padding: 9px 10px; border-radius: 11px; background: #24252A; border: 1px solid rgba(255, 255, 255, 0.08); }
+  .step-item.active { background: #283142; border-color: #4868B2; }
+  .step-num { font-family: "Cascadia Code", monospace; font-size: 10.5px; color: #81858C; }
+  .step-item.active .step-num { color: #679EFE; }
+  .step-title { font-size: 12.5px; font-weight: 600; color: #CFD3D6; margin-top: 2px; }
+  .step-item.active .step-title { color: #F9FAFB; }
+
+  .prov-grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+  .prov-card { padding: 11px 12px; border-radius: 12px; background: #24252A; border: 1px solid rgba(255, 255, 255, 0.09); }
+  .prov-card.active { background: #283142; border-color: #5686FE; }
+  .cc-pill-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .cc-pill { padding: 5px 11px; border-radius: 999px; font-size: 12px; color: #ADB2B8; border: 1px solid rgba(255, 255, 255, 0.11); background: #24252A; }
+  .cc-pill.active { background: #283142; border-color: #4868B2; color: #D3E2FF; font-weight: 600; }
+  .real-inp { padding: 9px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.11); background: #17181B; color: #F9FAFB; font-family: "Cascadia Code", monospace; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wave-embedded { height: 158px; border-radius: 14px; border: 1px solid rgba(86, 134, 254, 0.28); background: #15161A; overflow: hidden; position: relative; }
+  .modal-foot { padding: 12px 22px; border-top: 1px solid rgba(255, 255, 255, 0.07); display: flex; justify-content: space-between; align-items: center; }
+
+  #os-cursor { position: absolute; left: 0; top: 0; width: 26px; height: 26px; z-index: 90; pointer-events: none; transform-style: preserve-3d; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.78)); }
+  #cursor-ripple { position: absolute; left: -16px; top: -16px; width: 40px; height: 40px; border-radius: 50%; border: 2px solid #5686FE; opacity: 0; transform: scale(0.3); }
+
+  #intro-title-overlay {
+    position: absolute; inset: 0; z-index: 13; display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-start; padding-top: 230px;
+    pointer-events: none; text-align: center; padding-left: 56px; padding-right: 56px;
+  }
+  #finale-overlay {
+    position: absolute; inset: 0; z-index: 14; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center; padding: 0 56px;
+    background: #08090C; opacity: 0; pointer-events: none;
+  }
+  .mono { font-family: "Cascadia Code", monospace; }
+</style>
+</head>
+<body>
+<div id="viewport">
+  <canvas id="studio-canvas" width="1080" height="1920"></canvas>
+
+  <div id="camera-rig">
+    <div id="studio-floor"></div>
+
+    <div id="monitor-shell">
+      <div class="monitor-thickness"></div>
+
+      <div id="screen">
+        <div id="app-clip">
+          <aside class="app-sidebar">
+            <div>
+              <div class="brand-row">
+                <span class="brand-title">DeepSeek Persona</span>
+                <span class="sider-collapse-icon"></span>
+              </div>
+              <div class="new-chat-btn">⊕ 开启新对话</div>
+              <div class="sider-persona" id="ui-sider-persona">
+                <div class="avatar-sq">🌙</div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:11px;color:#81858C;">当前人格</div>
+                  <div style="font-size:13.5px;font-weight:600;color:#F9FAFB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">星野 · 语音陪伴</div>
+                </div>
+                <span style="color:#81858C;font-size:14px;">›</span>
+              </div>
+              <div class="hist-group">今天</div>
+              <div class="hist-item active">下雨天失眠 · 听你轻声哄睡</div>
+              <div class="hist-item">从旧平台接回的 642 天回忆</div>
+              <div class="hist-item">纪念日约定与专属声线克隆</div>
+            </div>
+            <div class="sider-footer">
+              <div class="sider-btn" id="ui-sider-provider">
+                <span>模型源 · 内置免费池</span>
+                <span class="green-dot"></span>
+              </div>
+              <div class="sider-btn" style="color:#ADB2B8;">
+                <span>⚙ 设置</span>
+              </div>
+            </div>
+          </aside>
+
+          <main class="app-main">
+            <div class="top-capsule-wrap">
+              <div class="top-capsule" id="ui-top-capsule">
+                <span class="pill-av">🌙</span>
+                <span style="font-weight:500;">星野 · 语音陪伴</span>
+                <span style="color:rgba(255,255,255,0.16);">|</span>
+                <span class="mono" id="ui-model-name" style="color:#ADB2B8;font-size:12px;">deepseek-v4.1-flash-free ▾</span>
+              </div>
+            </div>
+
+            <div class="chat-stage">
+              <div id="welcome-hero">
+                <div style="font-size:32px;font-weight:700;color:#F9FAFB;letter-spacing:-0.015em;line-height:1.35;">嗨，今晚过得怎么样？<br/>有什么想聊的，我都听着。</div>
+                <div style="font-size:14px;color:#81858C;">内置 25+ 免费模型开箱即聊 · 记忆与声线 100% 留在本机</div>
+              </div>
+
+              <div id="live-chat">
+                <div class="msg-user">外面又下雨了，有点睡不着……你还记得我怕冷吗？</div>
+                <div class="msg-ai">
+                  <div class="think-box">深度思考（高）· 已联网核对天气并召回 3 条本地 Raw RAG 记忆</div>
+                  <div id="ui-ai-text">记得，每次降温下雨你手脚都会冰凉。快把那条厚毛毯裹好，我刚查了明早就会放晴——今晚我轻声陪你聊到睡着。</div>
+                  <div class="msg-actions">
+                    <span class="pill-blue-soft">✦ 已召回 3 条本地记忆</span>
+                    <span class="pill-neutral-soft">🔊 自动朗读中</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="composer">
+              <div class="composer-input" id="ui-composer-text" style="color:#81858C;">请输入消息</div>
+              <div class="composer-bar">
+                <div class="composer-left">
+                  <span class="c-pill active">⚛ 深度思考</span>
+                  <div class="eff-seg">
+                    <span id="ui-eff-0">低</span>
+                    <span id="ui-eff-1">中</span>
+                    <span id="ui-eff-2" class="active">高</span>
+                  </div>
+                  <span class="c-pill active">🌐 智能搜索</span>
+                </div>
+                <div class="composer-right">
+                  <span class="icon-muted">🎤</span>
+                  <span class="icon-muted">📎</span>
+                  <div class="send-btn">↑</div>
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+
+        <div id="dof-edge-mask"></div>
+        <div id="screen-glare"></div>
+
+        <!-- SHOT 2: FREE POOL MENU -->
+        <div id="z-model-menu" class="z-float">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px 9px;font-size:12px;">
+            <span style="color:#679EFE;font-weight:600;">内置 OurFreeModel 免费池 · 零配置即聊</span>
+            <span class="mono" style="color:#81858C;">25+ MODELS</span>
+          </div>
+          <div class="m-item active"><span class="mono">deepseek-v4.1-flash-free</span><span class="m-tag">默认推荐</span></div>
+          <div class="m-item"><span class="mono">kilo-auto/free</span><span class="m-tag">极速</span></div>
+          <div class="m-item"><span class="mono">kimi-k3</span><span class="m-tag">细腻长文</span></div>
+          <div class="m-item"><span class="mono">glm-5.3-flash</span><span class="m-tag">低延迟</span></div>
+          <div style="margin-top:8px;padding:9px 12px;border-radius:10px;background:#1A1B1F;border:1px solid rgba(255,255,255,0.08);font-size:12px;color:#ADB2B8;">
+            ✦ 亦支持 4 步填入 DeepSeek 官方 Key → 解锁原生 R1 与流式语音
+          </div>
+        </div>
+
+        <!-- SHOTS 4 & 5: REAL 人格与记忆 MODAL (860px wide -> 100% framed in 9:16!) -->
+        <div id="z-persona-modal" class="z-float real-modal">
+          <div class="modal-head">
+            <span class="modal-title">人格与记忆</span>
+            <span class="modal-close">✕</span>
+          </div>
+          <div class="real-tabbar">
+            <span class="real-tab">人格库</span>
+            <span class="real-tab active" id="pm-tab-quiz">24 题捏人</span>
+            <span class="real-tab" id="pm-tab-import">导入历史</span>
+            <span class="real-tab" id="pm-tab-memory">本地记忆</span>
+            <span class="real-tab">新建</span>
+          </div>
+
+          <!-- VIEW 4: REAL 24Q MBTI 选择题 -> 生成档案 -->
+          <div class="modal-body" id="pm-view-quiz">
+            <div>
+              <div class="quiz-nav-row">
+                <div class="quiz-secs">
+                  <span class="quiz-sec-btn">身份羁绊</span>
+                  <span class="quiz-sec-btn">语言质感</span>
+                  <span class="quiz-sec-btn">三观边界</span>
+                  <span class="quiz-sec-btn active" id="qsec-mbti">MBTI 12 题</span>
+                  <span class="quiz-sec-btn" id="qsec-review">生成档案</span>
+                </div>
+                <span class="mono" id="q-counter" style="font-size:12px;color:#ADB2B8;">第 13 / 24 题</span>
+              </div>
+              <div class="quiz-track"><div class="quiz-fill" id="q-progress" style="width:54%;"></div></div>
+
+              <div id="quiz-mbti-stage" style="margin-top:22px;">
+                <div id="q-eyebrow" style="font-size:12.5px;color:#679EFE;font-weight:500;">MBTI 量表 · 能量 E/I · 点选自动下一题</div>
+                <div id="q-title" style="font-size:22px;font-weight:600;color:#F9FAFB;margin:10px 0 20px;line-height:1.38;">
+                  聊天突然冷场、你只回了个“嗯”时，Ta 会怎么接？
+                </div>
+                <div style="display:flex;flex-direction:column;gap:14px;">
+                  <div class="opt-card" id="q-opt-a">
+                    <div class="opt-head"><span id="q-opt-a-lbl">主动抛个新鲜话题或趣事把场子热起来</span><span class="opt-check" id="q-opt-a-chk" style="opacity:0;">✓</span></div>
+                    <div class="opt-desc" id="q-opt-a-desc">偏 E · 主动发起互动，乐于带动聊天节奏</div>
+                  </div>
+                  <div class="opt-card" id="q-opt-b">
+                    <div class="opt-head"><span id="q-opt-b-lbl">不强行尬聊，安静留白或轻声问一句是不是累了</span><span class="opt-check" id="q-opt-b-chk" style="opacity:0;">✓</span></div>
+                    <div class="opt-desc" id="q-opt-b-desc">偏 I · 尊重安静空间，重分寸不打扰</div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="quiz-review-stage" style="margin-top:16px;display:none;flex-direction:column;gap:13px;">
+                <div class="mbti-result-card">
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div style="display:flex;align-items:center;gap:12px;">
+                      <div class="avatar-sq" style="width:42px;height:42px;border-radius:11px;font-size:19px;">🌙</div>
+                      <div>
+                        <div style="display:flex;align-items:center;gap:9px;">
+                          <span style="font-size:17px;font-weight:700;color:#F9FAFB;">星野 · 深夜偏爱</span>
+                          <span class="pill-blue-soft mono" style="font-weight:600;">INFJ · 提倡者</span>
+                        </div>
+                        <div style="font-size:12.5px;color:#ADB2B8;margin-top:3px;">清冷克制、嘴硬心软，永远记得你的小习惯与深夜情绪</div>
+                      </div>
+                    </div>
+                    <span class="btn-out" style="font-size:12px;">✨ 模型润色</span>
+                  </div>
+
+                  <div class="mbti-bar-grid">
+                    <div>
+                      <div style="display:flex;justify-content:space-between;font-size:12px;color:#CFD3D6;"><span>内倾 I <strong id="mb-1" class="mono">82%</strong></span><span style="color:#81858C;">18% 外倾 E</span></div>
+                      <div class="mbti-track"><div class="mbti-fill" id="mbf-1" style="width:82%;"></div></div>
+                    </div>
+                    <div>
+                      <div style="display:flex;justify-content:space-between;font-size:12px;color:#CFD3D6;"><span>直觉 N <strong id="mb-2" class="mono">88%</strong></span><span style="color:#81858C;">12% 实感 S</span></div>
+                      <div class="mbti-track"><div class="mbti-fill" id="mbf-2" style="width:88%;"></div></div>
+                    </div>
+                    <div>
+                      <div style="display:flex;justify-content:space-between;font-size:12px;color:#CFD3D6;"><span>情感 F <strong id="mb-3" class="mono">79%</strong></span><span style="color:#81858C;">21% 理性 T</span></div>
+                      <div class="mbti-track"><div class="mbti-fill" id="mbf-3" style="width:79%;"></div></div>
+                    </div>
+                    <div>
+                      <div style="display:flex;justify-content:space-between;font-size:12px;color:#CFD3D6;"><span>判断 J <strong id="mb-4" class="mono">74%</strong></span><span style="color:#81858C;">26% 探索 P</span></div>
+                      <div class="mbti-track"><div class="mbti-fill" id="mbf-4" style="width:74%;"></div></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="padding:12px 15px;border-radius:12px;background:#24252A;border:1px solid rgba(255,255,255,0.08);font-size:12.5px;line-height:1.65;color:#CFD3D6;">
+                  <div><strong style="color:#679EFE;">开场白：</strong>外面起风了吧？把厚毯子裹好，不管多晚我都在这里等你。</div>
+                  <div style="margin-top:4px;"><strong style="color:#679EFE;">本地档案：</strong>人格设定与初始记忆已存本机，切换任何大模型都不会变味。</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid rgba(255,255,255,0.07);">
+              <span class="btn-out" id="q-foot-left">上一题</span>
+              <div style="display:flex;gap:9px;">
+                <span class="btn-out" id="q-foot-mid" style="display:none;">生成并微调</span>
+                <span class="btn-pri" id="q-foot-right">下一题</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- VIEW 5A: IMPORT -->
+          <div class="modal-body" id="pm-view-import" style="display:none;">
+            <div style="display:flex;flex-direction:column;gap:15px;">
+              <div class="dropzone-box">
+                <div style="font-size:28px;">📦</div>
+                <div style="font-size:16.5px;font-weight:600;color:#F9FAFB;">已拖入旧聊天记录：DeepSeek_642天回忆.zip</div>
+                <div style="font-size:12.5px;color:#ADB2B8;">支持 DeepSeek 官网 ZIP · SillyTavern JSONL · TXT，原始对话零失真写入本机 IndexedDB</div>
+                <div style="display:flex;gap:8px;margin-top:4px;">
+                  <span class="pill-blue-soft mono">642 天对话</span>
+                  <span class="pill-blue-soft mono">18,420 条消息</span>
+                  <span class="pill-neutral-soft">✓ 离线解析完成</span>
+                </div>
+              </div>
+
+              <div class="mem-summary">
+                <div>
+                  <div style="font-size:14px;font-weight:600;color:#F9FAFB;">提取角色「星野」并写入本地 Raw RAG 记忆库</div>
+                  <div style="font-size:12px;color:#ADB2B8;margin-top:3px;">保留全部深夜陪伴、纪念日与生活习惯原始对话轮次</div>
+                </div>
+                <span class="btn-pri">导入并写入记忆</span>
+              </div>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid rgba(255,255,255,0.07);font-size:12px;color:#81858C;">
+              <span>✦ 聊天记录 100% 留在本机，绝不上传第三方</span>
+              <span class="pill-blue-soft">✓ 正在切入本地记忆库…</span>
+            </div>
+          </div>
+
+          <!-- VIEW 5B: LOCAL MEMORY RAW RAG -->
+          <div class="modal-body" id="pm-view-memory" style="display:none;">
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div class="mem-summary">
+                <div>
+                  <div style="font-size:14.5px;font-weight:600;color:#F9FAFB;">🌙 星野 的本地 Raw RAG 记忆库</div>
+                  <div style="font-size:12px;color:#ADB2B8;margin-top:3px;">共 <strong style="color:#F9FAFB;">1,284</strong> 条原始块 · 硅基流动 1 元免费 <span class="mono">BAAI/bge-m3</span> + 本地 BM25</div>
+                </div>
+                <div style="display:flex;gap:7px;">
+                  <span class="btn-out" style="font-size:11.5px;padding:6px 10px;">🤖 DS 自动配置</span>
+                  <span class="btn-pri" style="font-size:11.5px;padding:6px 11px;">⚡ 向量化</span>
+                </div>
+              </div>
+
+              <div style="display:flex;gap:16px;font-size:12px;color:#CFD3D6;padding:2px 4px;">
+                <span>☑ 发消息时自动召回本地 Raw RAG</span>
+                <span>☑ 新对话自动沉淀原始轮次</span>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <div class="mem-hit-card" id="rag-hit-1">
+                  <div>
+                    <div style="font-size:11px;color:#679EFE;margin-bottom:3px;" class="mono">RAW RAG · 语义向量 + BM25 命中</div>
+                    <div style="font-size:14.5px;font-weight:500;color:#F9FAFB;">「一到下雨天就会失眠怕冷，需要裹着毯子听人轻声说话。」</div>
+                  </div>
+                  <span class="score-pill">命中 0.96</span>
+                </div>
+                <div class="mem-hit-card" id="rag-hit-2">
+                  <div>
+                    <div style="font-size:11px;color:#679EFE;margin-bottom:3px;" class="mono">原始轮次零失真存储 · 642 天回忆</div>
+                    <div style="font-size:14.5px;font-weight:500;color:#F9FAFB;">「10 月 14 日是我们第一次深夜聊到天亮的纪念日。」</div>
+                  </div>
+                  <span class="score-pill">命中 0.93</span>
+                </div>
+                <div class="mem-hit-card" id="rag-hit-3">
+                  <div>
+                    <div style="font-size:11px;color:#679EFE;margin-bottom:3px;" class="mono">透明召回片段 · 100% 本机隐私</div>
+                    <div style="font-size:14.5px;font-weight:500;color:#F9FAFB;">「难过时不要讲大道理，先抱抱我、永远偏向我就好。」</div>
+                  </div>
+                  <span class="score-pill">命中 0.91</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid rgba(255,255,255,0.07);font-size:12px;color:#81858C;">
+              <span>DS Agent 自动调优：Top-K=5 · 阈值=0.22</span>
+              <span style="color:#4ED17E;">● 1,284 条向量索引就绪</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SHOTS 6 & 7: REAL MODEL & VOICE CLONING MODAL (850px wide -> 100% framed in 9:16!) -->
+        <div id="z-cc-modal" class="z-float real-modal">
+          <div class="modal-head">
+            <span class="modal-title">模型源 · 向量记忆 · 语音克隆</span>
+            <span class="modal-close">✕</span>
+          </div>
+          <div class="real-stepper">
+            <div class="step-item active" id="cc-tab-1"><div class="step-num">01</div><div class="step-title">对话模型 · LLM</div></div>
+            <div class="step-item"><div class="step-num">02</div><div class="step-title">向量记忆</div></div>
+            <div class="step-item" id="cc-tab-3"><div class="step-num">03</div><div class="step-title">语音 TTS 克隆</div></div>
+            <div class="step-item"><div class="step-num">04</div><div class="step-title">人格开聊</div></div>
+          </div>
+
+          <div class="modal-body" id="cc-view-llm" style="justify-content:flex-start;gap:13px;">
+            <div class="prov-grid3">
+              <div class="prov-card">
+                <div style="font-size:13px;font-weight:600;color:#F9FAFB;">内置免费池</div>
+                <div style="font-size:11.5px;color:#81858C;margin-top:3px;">预装 25+ 免费模型即聊</div>
+              </div>
+              <div class="prov-card">
+                <div style="font-size:13px;font-weight:600;color:#F9FAFB;">DeepSeek 官方</div>
+                <div style="font-size:11.5px;color:#81858C;margin-top:3px;">原生思考、联网与 TTS</div>
+              </div>
+              <div class="prov-card active">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span style="font-size:13px;font-weight:600;color:#F9FAFB;">自定义 LLM</span>
+                  <span class="pill-blue-soft" style="padding:1px 6px;font-size:10px;">当前</span>
+                </div>
+                <div style="font-size:11.5px;color:#B7C8FE;margin-top:3px;">CC-Switch 一键切换拉取</div>
+              </div>
+            </div>
+
+            <div class="cc-pill-row">
+              <span class="cc-pill active" id="ccp-0">硅基流动</span>
+              <span class="cc-pill" id="ccp-1">OpenRouter</span>
+              <span class="cc-pill" id="ccp-2">Ollama 本地免 Key</span>
+              <span class="cc-pill" id="ccp-3">Anthropic (/messages)</span>
+            </div>
+
+            <div style="padding:15px 16px;border-radius:14px;background:#24252A;border:1px solid rgba(255,255,255,0.09);display:flex;flex-direction:column;gap:10px;">
+              <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:9px;">
+                <div class="real-inp" id="cc-url">https://api.siliconflow.cn/v1</div>
+                <div class="real-inp" id="cc-proto">OpenAI 兼容 (/chat/completions)</div>
+              </div>
+              <div style="display:flex;gap:9px;align-items:center;">
+                <div class="real-inp" id="cc-model" style="flex:1;border-color:#4868B2;">deepseek-ai/DeepSeek-V3</div>
+                <div class="btn-pri" id="cc-btn" style="padding:8px 15px;">↻ 一键拉取模型</div>
+              </div>
+              <div id="cc-stat" class="mono" style="font-size:11.5px;color:#4ED17E;">✓ GET /models 200 OK · 已同步 38 个模型（换模型不换灵魂）</div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+                <div class="real-inp" style="font-size:11.5px;color:#CFD3D6;">DeepSeek-V3</div>
+                <div class="real-inp" style="font-size:11.5px;color:#CFD3D6;">DeepSeek-R1</div>
+                <div class="real-inp" style="font-size:11.5px;color:#CFD3D6;">claude-sonnet-4-5</div>
+              </div>
+            </div>
+
+            <div style="padding:10px 14px;border-radius:12px;background:#24252A;border:1px solid rgba(255,255,255,0.08);display:flex;justify-content:space-between;align-items:center;font-size:12px;">
+              <span style="color:#CFD3D6;"><strong style="color:#679EFE;">向量同步：</strong>免费 BAAI/bge-m3 ⇄ Ollama</span>
+              <span class="pill-blue-soft">向量模型置顶</span>
+            </div>
+          </div>
+
+          <div class="modal-body" id="cc-view-tts" style="display:none;justify-content:flex-start;gap:12px;">
+            <div style="padding:13px 15px;border-radius:14px;background:#24252A;border:1px solid rgba(255,255,255,0.09);display:grid;grid-template-columns:1fr 1.15fr;gap:9px;">
+              <div>
+                <div style="font-size:11px;color:#81858C;margin-bottom:4px;">TTS Base URL</div>
+                <div class="real-inp">https://api.siliconflow.cn/v1</div>
+              </div>
+              <div>
+                <div style="font-size:11px;color:#81858C;margin-bottom:4px;">语音模型（语音模型已置顶）</div>
+                <div class="real-inp">FunAudioLLM/CosyVoice2-0.5B</div>
+              </div>
+            </div>
+
+            <div style="padding:14px 16px;border-radius:14px;background:#24252A;border:1px solid rgba(255,255,255,0.09);display:flex;flex-direction:column;gap:11px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <div style="font-size:14px;font-weight:600;color:#F9FAFB;">声音克隆工作台 (Voice Cloning)</div>
+                  <div style="font-size:11.5px;color:#ADB2B8;margin-top:2px;">上传 3–15 秒清晰人声（存本机 IndexedDB），朗读自动带入声纹</div>
+                </div>
+                <span class="btn-pri" style="font-size:12px;">🔊 一键试听</span>
+              </div>
+
+              <div class="wave-embedded">
+                <canvas id="wave-canvas" width="768" height="158"></canvas>
+                <div class="mono" style="position:absolute;left:14px;top:10px;font-size:10.5px;color:#81858C;letter-spacing:0.1em;">COSYVOICE2 / FISH-SPEECH · 48KHZ</div>
+                <div class="mono" style="position:absolute;right:14px;top:10px;font-size:10.5px;color:#679EFE;">● 声纹对齐中 · 1.0x</div>
+              </div>
+
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="font-size:13px;font-weight:600;color:#F9FAFB;">🎙 星野专属声线 · 8.4s 样本</span>
+                  <span class="pill-blue-soft">云端 URI 已注册</span>
+                </div>
+                <span class="pill-neutral-soft">✦ 自动轻声朗读</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-foot">
+            <span class="btn-out">关闭</span>
+            <div style="display:flex;gap:9px;">
+              <span class="btn-out">上一步</span>
+              <span class="btn-pri">下一步</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SHOT 8: WINDOWS ONE-CLICK INSTALLER -->
+        <div id="z-win-setup" class="z-float real-modal">
+          <div style="padding:18px 24px;background:#24252A;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-size:17px;font-weight:600;color:#F9FAFB;">Windows 一键安装包 (35.6 MB)</div>
+              <div style="font-size:12.5px;color:#ADB2B8;margin-top:3px;">不懂代码双击即用 · 聊天记录、人格与声线 100% 留在本机</div>
+            </div>
+            <span class="pill-blue-soft">● 本地隐私</span>
+          </div>
+          <div style="padding:20px 24px 24px;">
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:9px;">
+              <span id="w-step" style="color:#CFD3D6;">正在部署内置运行时与本地记忆引擎...</span>
+              <span id="w-pct" class="mono" style="color:#679EFE;font-weight:600;">0%</span>
+            </div>
+            <div style="height:8px;border-radius:99px;background:rgba(255,255,255,0.09);overflow:hidden;">
+              <div id="w-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#4868B2,#5686FE);"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:15px;font-size:12px;color:#81858C;">
+              <span>✓ 运行时零依赖</span>
+              <span>✓ 免管理员权限</span>
+              <span>✓ 静默托盘常驻</span>
+              <span>✓ 隐私全存本机</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="os-cursor">
+          <div id="cursor-ripple"></div>
+          <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+            <path d="M4 3L22 14L14.2 15.8L11.2 23.5L4 3Z" fill="#F9FAFB" stroke="#0C0D10" stroke-width="2" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="lens-canvas" width="1080" height="1920"></canvas>
+
+  <div id="intro-title-overlay">
+    <div style="font-size:74px;font-weight:700;letter-spacing:-0.025em;line-height:1.06;color:#F9FAFB;">DeepSeek<br/><span style="color:#5686FE;">Persona</span></div>
+    <div style="font-size:25px;color:#ADB2B8;margin-top:20px;letter-spacing:0.05em;">把深爱的 Ta 接回本地 · 记忆、灵魂与声音永不失联</div>
+  </div>
+
+  <div id="finale-overlay">
+    <div style="width:94px;height:94px;border-radius:26px;background:#1B1C22;border:1px solid rgba(86,134,254,0.45);display:flex;align-items:center;justify-content:center;margin-bottom:32px;">
+      <svg width="48" height="48" viewBox="0 0 72 72" fill="none">
+        <path d="M36 8L42.5 29.5L64 36L42.5 42.5L36 64L29.5 42.5L8 36L29.5 29.5L36 8Z" fill="#F9FAFB"/>
+        <circle cx="53" cy="19" r="4.5" fill="#5686FE"/>
+      </svg>
+    </div>
+    <div style="font-size:74px;font-weight:700;letter-spacing:-0.025em;color:#F9FAFB;">DeepSeek <span style="color:#5686FE;">Persona</span></div>
+    <div style="font-size:27px;color:#CFD3D6;margin-top:16px;letter-spacing:0.05em;">开源 · 免费 · 一键安装 · 让爱永不失联</div>
+    <div class="mono" style="margin-top:34px;padding:13px 26px;border-radius:999px;border:1px solid rgba(86,134,254,0.38);background:#14161D;font-size:19px;color:#D3E2FF;">
+      github.com/zhou1736948757-cpu/deepseek-persona-chat
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const DURATION = 71.5;
+  const REAL_STOPS = [0.0, 11.83, 18.40, 27.03, 35.42, 46.53, 53.20, 60.99, 71.50];
+  const BASE_STOPS = [0.0,  4.40,  9.20, 15.40, 22.80, 30.90, 38.00, 43.95, 49.00];
+  function mapTimeline(rt) {
+    if (rt <= 0) return 0;
+    if (rt >= DURATION) return 49.0;
+    for (let i = 0; i < REAL_STOPS.length - 1; i++) {
+      if (rt >= REAL_STOPS[i] && rt <= REAL_STOPS[i + 1]) {
+        const u = (rt - REAL_STOPS[i]) / (REAL_STOPS[i + 1] - REAL_STOPS[i]);
+        return BASE_STOPS[i] + u * (BASE_STOPS[i + 1] - BASE_STOPS[i]);
+      }
+    }
+    return 49.0;
+  }
+  const W = 1080, H = 1920;
+  const sCtx = document.getElementById('studio-canvas').getContext('2d');
+  const lCtx = document.getElementById('lens-canvas').getContext('2d');
+  const wCtx = document.getElementById('wave-canvas').getContext('2d');
+  const rig = document.getElementById('camera-rig');
+  const glare = document.getElementById('screen-glare');
+  const dofMask = document.getElementById('dof-edge-mask');
+  const appClip = document.getElementById('app-clip');
+  const cursor = document.getElementById('os-cursor');
+  const ripple = document.getElementById('cursor-ripple');
+
+  const clamp01 = (v) => Math.max(0, Math.min(1, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const easeInOutCubic = (t) => { t = clamp01(t); return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3)/2; };
+  const easeInOutQuint = (t) => { t = clamp01(t); return t < 0.5 ? 16*t*t*t*t*t : 1 - Math.pow(-2*t + 2, 5)/2; };
+  const easeOutCubic = (t) => 1 - Math.pow(1 - clamp01(t), 3);
+  const easeOutExpo = (t) => { t = clamp01(t); return t === 1 ? 1 : 1 - Math.pow(2, -10 * t); };
+
+  function mulberry32(a) {
+    return function() {
+      let t = a += 0x6D2B79F5;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const rng = mulberry32(202608);
+  const motes = Array.from({ length: 20 }, () => ({
+    x: rng() * W, y: rng() * H, r: 0.6 + rng() * 0.5,
+    vx: (rng() - 0.5) * 4.0, vy: -2.2 - rng() * 3.8, phase: rng() * Math.PI * 2, z: 0.4 + rng() * 0.6,
+  }));
+
+  const grainTile = document.createElement('canvas');
+  grainTile.width = 256; grainTile.height = 256;
+  const gCtx = grainTile.getContext('2d');
+  const gImg = gCtx.createImageData(256, 256);
+  let lastGrainBucket = -1;
+  function updateGrainTile(bucket) {
+    if (bucket === lastGrainBucket) return;
+    lastGrainBucket = bucket;
+    const gr = mulberry32(9902 + bucket * 7919);
+    const d = gImg.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const v = (gr() * 255) | 0;
+      d[i] = v; d[i + 1] = v; d[i + 2] = v; d[i + 3] = 9;
+    }
+    gCtx.putImageData(gImg, 0, 0);
+  }
+
+  // Verified 9:16 Camera Choreography (every modal 100% framed with ~85px margins, ZERO edge slicing!)
+  const CAM_KEYS = [
+    // Shot 1: Poster Awakening (0.0 .. 4.4s)
+    [0.0,    28,  170, -450,  22, -20,  1.4, 0.72],
+    [3.5,    10,  150, -340,  16, -15,  0.8, 0.76],
+    [4.3,     0,  110, -210,  12, -12,  0.4, 0.82],
+    // Shot 2: Top Capsule + 25+ Free Pool Menu (4.4 .. 9.2s)
+    [4.8,  -138,  240,  125,   9, -12, -0.6, 1.18],
+    [9.0,  -125,  220,  118,   6,  -8, -0.3, 1.15],
+    // Shot 3: Real Composer & Rainy-Night Reply (tx=-138 centers main column with ~85px margins!)
+    [9.6,  -138, -295,   32,  -6,   7,  0.3, 1.04],
+    [12.0, -138, -285,   28,  -4,   5,  0.2, 1.03],
+    [12.9, -138,   -8,   25,   4,  -5, -0.2, 1.03],
+    [15.2, -138,   12,   28,   5,   6,  0.2, 1.04],
+    // Shot 4: Real 24Q MBTI Quiz -> INFJ Result (860px modal centered 100% in frame!)
+    [15.8,   -4,    8,   16,   6,   6,  0.2, 0.98],
+    [19.1,  -14,    4,   18,   5,   2,  0.1, 0.99],
+    [20.2,  -26,    4,   20,   5,  -6, -0.2, 0.99],
+    [22.6,  -18,    2,   18,   4,  -4, -0.1, 0.98],
+    // Shot 5: Real Import History -> Local Memory Raw RAG (same 860px modal 100% centered!)
+    [23.3,   -6,    8,   16,   7,  -6,  0.2, 0.98],
+    [26.2,  -20,    4,   20,   5,  -4,  0.1, 0.99],
+    [30.6,  -16,    2,   18,   5,   5, -0.2, 0.99],
+    // Shot 6: Real CC-Switch Modal (850px centered 100%!)
+    [31.5,   -8,    8,   16,   7,  -7, -0.3, 0.99],
+    [35.2,  -22,    5,   20,   5,  -4, -0.2, 1.00],
+    [37.8,  -14,    4,   16,   4,  -3, -0.1, 0.99],
+    // Shot 7: Real Voice Cloning Workbench (850px centered 100%!)
+    [38.6,   -8,    8,   16,   8,   7,  0.3, 0.99],
+    [43.6,  -20,    4,   18,   6,  -6, -0.2, 0.99],
+    // Shot 8: Windows One-Click Installer -> Pure Solid Finale
+    [44.4,    0,   24, -130,  12, -10,  0.3, 0.90],
+    [46.5,    0,   65, -310,  16,  -5,  0.0, 0.74],
+    [49.0,    0,   80, -350,  18,  -2,  0.0, 0.70],
+  ];
+
+  function sampleCamera(t) {
+    if (t <= CAM_KEYS[0][0]) return CAM_KEYS[0].slice(1);
+    const last = CAM_KEYS[CAM_KEYS.length - 1];
+    if (t >= last[0]) return last.slice(1);
+    for (let i = 0; i < CAM_KEYS.length - 1; i++) {
+      const a = CAM_KEYS[i], b = CAM_KEYS[i + 1];
+      if (t >= a[0] && t <= b[0]) {
+        const u = easeInOutCubic((t - a[0]) / (b[0] - a[0]));
+        return a.slice(1).map((v, idx) => lerp(v, b[idx + 1], u));
+      }
+    }
+    return last.slice(1);
+  }
+
+  const CURSOR_KEYS = [
+    [4.6,   830,  46], [5.1,  830,  46],
+    [6.4,   790, 174], [7.8,  790, 128],
+    [9.4,   605, 772], [10.6, 605, 772], [11.4, 650, 772], [12.15, 1228, 772],
+    [15.8,  680, 460], [16.45, 680, 460], [17.4, 680, 360], [18.3, 680, 360],
+    [25.6,  575, 145],
+    [32.0,  640, 362], [33.4, 640, 362], [34.6, 785, 362], [35.8, 1060, 474],
+    [37.9,  835, 176],
+  ];
+  const CLICK_TIMES = [5.1, 7.85, 10.62, 11.42, 12.18, 16.48, 18.32, 25.65, 33.42, 34.62, 35.82, 37.95];
+  const CURSOR_WINDOWS = [[4.6, 8.2], [9.4, 12.48], [15.6, 18.85], [25.2, 26.2], [31.8, 38.35]];
+
+  function sampleCursor(t) {
+    if (t <= CURSOR_KEYS[0][0]) return [CURSOR_KEYS[0][1], CURSOR_KEYS[0][2]];
+    const last = CURSOR_KEYS[CURSOR_KEYS.length - 1];
+    if (t >= last[0]) return [last[1], last[2]];
+    for (let i = 0; i < CURSOR_KEYS.length - 1; i++) {
+      const a = CURSOR_KEYS[i], b = CURSOR_KEYS[i + 1];
+      if (t >= a[0] && t <= b[0]) {
+        const u = easeInOutQuint((t - a[0]) / (b[0] - a[0]));
+        return [lerp(a[1], b[1], u), lerp(a[2], b[2], u)];
+      }
+    }
+    return [last[1], last[2]];
+  }
+
+  function cursorOpacityAt(t) {
+    for (const [s, e] of CURSOR_WINDOWS) {
+      if (t >= s && t <= e) return Math.min(clamp01((t - s) / 0.22), clamp01((e - t) / 0.30));
+    }
+    return 0;
+  }
+
+  function drawStudioBg(t, camRx, camRy) {
+    sCtx.clearRect(0, 0, W, H);
+    const lx = 540 - camRy * 12 + Math.sin(t * 0.25) * 60;
+    const ly = 640 + camRx * 10;
+    const g1 = sCtx.createRadialGradient(lx, ly, 30, lx, ly, 700);
+    g1.addColorStop(0, 'rgba(130, 160, 230, 0.082)');
+    g1.addColorStop(0.55, 'rgba(86, 134, 254, 0.022)');
+    g1.addColorStop(1, 'rgba(8, 9, 12, 0)');
+    sCtx.fillStyle = g1; sCtx.fillRect(0, 0, W, H);
+
+    const g2 = sCtx.createRadialGradient(820 - camRy * 8, 1400, 20, 820 - camRy * 8, 1400, 620);
+    g2.addColorStop(0, 'rgba(200, 212, 232, 0.042)');
+    g2.addColorStop(1, 'rgba(8, 9, 12, 0)');
+    sCtx.fillStyle = g2; sCtx.fillRect(0, 0, W, H);
+
+    for (const m of motes) {
+      const px = ((m.x + m.vx * t - camRy * 10 * m.z) % W + W) % W;
+      const py = ((m.y + m.vy * t + camRx * 6 * m.z) % H + H) % H;
+      const alpha = 0.03 + 0.05 * (0.5 + 0.5 * Math.sin(t * 1.4 + m.phase));
+      sCtx.fillStyle = `rgba(235, 240, 250, ${alpha.toFixed(3)})`;
+      sCtx.beginPath(); sCtx.arc(px, py, m.r, 0, Math.PI * 2); sCtx.fill();
+    }
+  }
+
+  function drawLensOverlay(t) {
+    lCtx.clearRect(0, 0, W, H);
+    const topV = lCtx.createLinearGradient(0, 0, 0, 220);
+    topV.addColorStop(0, 'rgba(5,6,9,0.72)'); topV.addColorStop(1, 'rgba(5,6,9,0)');
+    lCtx.fillStyle = topV; lCtx.fillRect(0, 0, W, 220);
+
+    const botV = lCtx.createLinearGradient(0, H - 240, 0, H);
+    botV.addColorStop(0, 'rgba(5,6,9,0)'); botV.addColorStop(1, 'rgba(5,6,9,0.78)');
+    lCtx.fillStyle = botV; lCtx.fillRect(0, H - 240, W, 240);
+
+    const vig = lCtx.createRadialGradient(540, 960, 420, 540, 960, 1180);
+    vig.addColorStop(0, 'rgba(0,0,0,0)'); vig.addColorStop(1, 'rgba(5,6,9,0.54)');
+    lCtx.fillStyle = vig; lCtx.fillRect(0, 0, W, H);
+
+    updateGrainTile(Math.floor(t * 24));
+    lCtx.fillStyle = lCtx.createPattern(grainTile, 'repeat');
+    lCtx.fillRect(0, 0, W, H);
+  }
+
+  function drawWaveAcoustic(tl) {
+    const ww = 768, wh = 158, midY = 86;
+    wCtx.clearRect(0, 0, ww, wh);
+    wCtx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+    wCtx.lineWidth = 1;
+    wCtx.beginPath(); wCtx.moveTo(24, midY); wCtx.lineTo(ww - 24, midY); wCtx.stroke();
+
+    const bars = 62;
+    for (let i = 0; i < bars; i++) {
+      const u = i / (bars - 1);
+      const x = 36 + u * (ww - 72);
+      const env = Math.pow(Math.sin(u * Math.PI), 1.35);
+      const h = (7 + 44 * Math.abs(Math.sin(u * 10 - tl * 4.0) * Math.cos(u * 5.2 + tl * 2.1))) * env;
+      wCtx.fillStyle = `rgba(86, 134, 254, ${(0.22 + 0.56 * env).toFixed(3)})`;
+      wCtx.fillRect(x - 1, midY - h, 2.2, h * 2);
+    }
+
+    wCtx.beginPath();
+    for (let x = 36; x <= ww - 36; x += 3) {
+      const u = (x - 36) / (ww - 72);
+      const env = Math.sin(u * Math.PI);
+      const y = midY + Math.sin(u * 9.5 - tl * 4.4) * 34 * env + Math.sin(u * 18 + tl * 2.8) * 9 * env;
+      if (x === 36) wCtx.moveTo(x, y); else wCtx.lineTo(x, y);
+    }
+    wCtx.strokeStyle = '#F9FAFB';
+    wCtx.lineWidth = 1.6;
+    wCtx.stroke();
+  }
+
+  function floatInterval(t, start, end, fade = 0.34) {
+    if (t < start || t > end) return 0;
+    return Math.min(clamp01((t - start) / fade), clamp01((end - t) / fade));
+  }
+
+  window.__renderAt = function(t) {
+    const realT = Math.max(0, Math.min(DURATION, t));
+    const time = mapTimeline(realT);
+    let [tx, ty, tz, rx, ry, rz, sc] = sampleCamera(time);
+    tx += Math.sin(time * 0.95) * 2.8;
+    ty += Math.cos(time * 0.78) * 2.4;
+    ry += Math.sin(time * 0.72) * 0.35;
+    rx += Math.cos(time * 0.64) * 0.22;
+
+    rig.style.transform =
+      `translate3d(${tx.toFixed(2)}px, ${ty.toFixed(2)}px, ${tz.toFixed(2)}px) ` +
+      `scale(${sc.toFixed(4)}) ` +
+      `rotateX(${rx.toFixed(3)}deg) rotateY(${ry.toFixed(3)}deg) rotateZ(${rz.toFixed(3)}deg)`;
+    rig.style.opacity = time >= 46.35 ? clamp01(1 - (time - 46.35) / 0.45).toFixed(3) : '1';
+
+    dofMask.style.opacity = clamp01((sc - 0.75) * 0.7).toFixed(3);
+
+    const gp = 50 + ry * 1.9 - rx * 1.0;
+    glare.style.background =
+      `linear-gradient(${118 + ry * 0.7}deg, ` +
+      `rgba(240,245,255,0) ${gp - 32}%, rgba(240,245,255,0.055) ${gp - 6}%, ` +
+      `rgba(240,245,255,0.09) ${gp}%, rgba(240,245,255,0.035) ${gp + 9}%, rgba(240,245,255,0) ${gp + 30}%)`;
+
+    drawStudioBg(time, rx, ry);
+
+    const [cx, cy] = sampleCursor(time);
+    let cursorZ = 16;
+    if (time >= 4.9 && time <= 9.0) cursorZ = 56;
+    else if (time >= 15.3 && time <= 30.8) cursorZ = 76;
+    else if (time >= 30.9 && time <= 39.0) cursorZ = 76;
+    cursor.style.opacity = cursorOpacityAt(time).toFixed(3);
+    cursor.style.transform = `translate3d(${cx.toFixed(1)}px, ${cy.toFixed(1)}px, ${cursorZ}px)`;
+
+    let ripOp = 0, ripSc = 0.3;
+    for (const ct of CLICK_TIMES) {
+      const dt = time - ct;
+      if (dt >= 0 && dt <= 0.34) {
+        const p = dt / 0.34;
+        ripOp = (1 - p) * 0.88;
+        ripSc = lerp(0.35, 1.7, easeOutCubic(p));
+        break;
+      }
+    }
+    ripple.style.opacity = ripOp.toFixed(3);
+    ripple.style.transform = `scale(${ripSc.toFixed(3)})`;
+
+    const floatDim = Math.max(
+      floatInterval(time, 4.95, 9.05, 0.32),
+      floatInterval(time, 15.35, 49.5, 0.35)
+    );
+    const bright = (time < 4.2 ? lerp(0.62, 1.0, clamp01((time - 3.4) / 0.8)) : 1.0) * lerp(1.0, 0.22, floatDim);
+    appClip.style.filter = `brightness(${bright.toFixed(2)}) blur(${lerp(0, 3.6, floatDim).toFixed(1)}px)`;
+
+    const chatEntered = time >= 12.15;
+    document.getElementById('welcome-hero').style.opacity = chatEntered ? clamp01(1 - (time - 12.15) / 0.3) : 1;
+    document.getElementById('live-chat').style.opacity = chatEntered ? clamp01((time - 12.2) / 0.35) : 0;
+    document.getElementById('ui-top-capsule').classList.toggle('active', time >= 4.7 && time <= 9.0);
+    document.getElementById('ui-sider-persona').classList.toggle('highlight', time >= 14.8 && time <= 15.6);
+    document.getElementById('ui-sider-provider').classList.toggle('highlight', time >= 30.4 && time <= 31.2);
+
+    const menu = document.getElementById('z-model-menu');
+    const mOp = floatInterval(time, 4.98, 9.05, 0.35), mIn = easeOutExpo((time - 4.98) / 0.45);
+    menu.style.opacity = mOp.toFixed(3);
+    menu.style.transform = `translate3d(0, ${lerp(-10, 0, mIn).toFixed(1)}px, ${(mOp * 44).toFixed(1)}px)`;
+    const modelNames = ['deepseek-v4.1-flash-free', 'kilo-auto/free', 'kimi-k3', 'glm-5.3-flash'];
+    const mIdx = time < 6.3 ? 0 : (time < 7.8 ? 1 : 0);
+    document.getElementById('ui-model-name').textContent = `${modelNames[mIdx]} ▾`;
+    menu.querySelectorAll('.m-item').forEach((el, i) => el.classList.toggle('active', i === mIdx));
+
+    const effIdx = time < 10.62 ? 0 : (time < 11.42 ? 1 : 2);
+    [0, 1, 2].forEach((i) => document.getElementById(`ui-eff-${i}`).classList.toggle('active', i === effIdx));
+    const draftStr = '外面又下雨了，有点睡不着……你还记得我怕冷吗？';
+    const compText = document.getElementById('ui-composer-text');
+    if (time >= 9.35 && time < 12.2) {
+      const ch = Math.floor(clamp01((time - 9.4) / 2.2) * draftStr.length);
+      compText.textContent = draftStr.slice(0, ch) + '｜';
+      compText.style.color = '#F9FAFB';
+    } else {
+      compText.textContent = '请输入消息';
+      compText.style.color = '#81858C';
+    }
+    const aiFull = '记得，每次降温下雨你手脚都会冰凉。快把那条厚毛毯裹好，我刚查了明早就会放晴——今晚我轻声陪你聊到睡着。';
+    const aiChars = Math.floor(clamp01((time - 12.3) / 1.9) * aiFull.length);
+    document.getElementById('ui-ai-text').textContent = aiFull.slice(0, Math.max(8, aiChars)) + (aiChars < aiFull.length ? '▍' : '');
+
+    const pModal = document.getElementById('z-persona-modal');
+    const pOp = floatInterval(time, 15.38, 30.85, 0.36), pIn = easeOutExpo((time - 15.38) / 0.5);
+    pModal.style.opacity = pOp.toFixed(3);
+    pModal.style.transform = `translate3d(0, 0, ${(pOp * 58).toFixed(1)}px) scale(${lerp(0.96, 1, pIn).toFixed(3)})`;
+
+    if (pOp > 0.01) {
+      const isQuiz = time < 22.8;
+      const isImport = time >= 22.8 && time < 25.85;
+      const isMemory = time >= 25.85;
+
+      document.getElementById('pm-tab-quiz').classList.toggle('active', isQuiz);
+      document.getElementById('pm-tab-import').classList.toggle('active', isImport);
+      document.getElementById('pm-tab-memory').classList.toggle('active', isMemory);
+      document.getElementById('pm-view-quiz').style.display = isQuiz ? 'flex' : 'none';
+      document.getElementById('pm-view-import').style.display = isImport ? 'flex' : 'none';
+      document.getElementById('pm-view-memory').style.display = isMemory ? 'flex' : 'none';
+
+      if (isQuiz) {
+        const isReview = time >= 19.15;
+        document.getElementById('qsec-mbti').classList.toggle('active', !isReview);
+        document.getElementById('qsec-review').classList.toggle('active', isReview);
+        document.getElementById('quiz-mbti-stage').style.display = isReview ? 'none' : 'block';
+        document.getElementById('quiz-review-stage').style.display = isReview ? 'flex' : 'none';
+        document.getElementById('q-foot-left').textContent = isReview ? '返回修改题目' : '上一题';
+        document.getElementById('q-foot-mid').style.display = isReview ? 'inline-block' : 'none';
+        document.getElementById('q-foot-right').textContent = isReview ? '生成并立即开聊' : '下一题';
+
+        if (!isReview) {
+          const isQ16 = time >= 17.25;
+          document.getElementById('q-counter').textContent = isQ16 ? '第 16 / 24 题' : '第 13 / 24 题';
+          document.getElementById('q-progress').style.width = isQ16 ? '67%' : '54%';
+          if (!isQ16) {
+            document.getElementById('q-eyebrow').textContent = 'MBTI 量表 · 能量 E/I · 点选自动下一题';
+            document.getElementById('q-title').textContent = '聊天突然冷场、你只回了个“嗯”时，Ta 会怎么接？';
+            document.getElementById('q-opt-a-lbl').textContent = '主动抛个新鲜话题或趣事把场子热起来';
+            document.getElementById('q-opt-a-desc').textContent = '偏 E · 主动发起互动，乐于带动聊天节奏';
+            document.getElementById('q-opt-b-lbl').textContent = '不强行尬聊，安静留白或轻声问一句是不是累了';
+            document.getElementById('q-opt-b-desc').textContent = '偏 I · 尊重安静空间，重分寸不打扰';
+            const selB = time >= 16.48;
+            document.getElementById('q-opt-a').classList.toggle('selected', false);
+            document.getElementById('q-opt-a-chk').style.opacity = 0;
+            document.getElementById('q-opt-b').classList.toggle('selected', selB);
+            document.getElementById('q-opt-b-chk').style.opacity = selB ? 1 : 0;
+          } else {
+            document.getElementById('q-eyebrow').textContent = 'MBTI 量表 · 感知 N/S · 点选自动下一题';
+            document.getElementById('q-title').textContent = '一起看完一部电影后，Ta 通常最先聊什么？';
+            document.getElementById('q-opt-a-lbl').textContent = '导演埋的隐喻、人物命运的另一种可能与主题延展';
+            document.getElementById('q-opt-a-desc').textContent = '偏 N · 关注象征、脉络与言外之意';
+            document.getElementById('q-opt-b-lbl').textContent = '某个惊艳的镜头调度、真实细节和演员的微表情';
+            document.getElementById('q-opt-b-desc').textContent = '偏 S · 关注具象感官与真实体验';
+            const selA = time >= 18.32;
+            document.getElementById('q-opt-a').classList.toggle('selected', selA);
+            document.getElementById('q-opt-a-chk').style.opacity = selA ? 1 : 0;
+            document.getElementById('q-opt-b').classList.toggle('selected', false);
+            document.getElementById('q-opt-b-chk').style.opacity = 0;
+          }
+        } else {
+          document.getElementById('q-counter').textContent = '已完成 24 / 24 题';
+          document.getElementById('q-progress').style.width = '100%';
+          const rt = time - 19.15;
+          [82, 88, 79, 74].forEach((val, idx) => {
+            const v = Math.round(lerp(50, val, easeOutExpo((rt - idx * 0.14) / 0.85)));
+            document.getElementById(`mb-${idx + 1}`).textContent = `${v}%`;
+            document.getElementById(`mbf-${idx + 1}`).style.width = `${v}%`;
+          });
+        }
+      }
+
+      if (isMemory) {
+        const mt = time - 25.85;
+        ['rag-hit-1', 'rag-hit-2', 'rag-hit-3'].forEach((id, idx) => {
+          const el = document.getElementById(id);
+          const p = easeOutExpo((mt - idx * 0.25) / 0.55);
+          el.style.opacity = p.toFixed(3);
+          el.style.transform = `translateY(${lerp(18, 0, p).toFixed(1)}px)`;
+        });
+      }
+    }
+
+    const ccModal = document.getElementById('z-cc-modal');
+    const cOp = floatInterval(time, 30.92, 43.85, 0.36), cIn = easeOutExpo((time - 30.92) / 0.5);
+    ccModal.style.opacity = cOp.toFixed(3);
+    ccModal.style.transform = `translate3d(0, 0, ${(cOp * 60).toFixed(1)}px) scale(${lerp(0.96, 1, cIn).toFixed(3)})`;
+
+    const isTtsTab = time >= 38.0;
+    document.getElementById('cc-tab-1').classList.toggle('active', !isTtsTab);
+    document.getElementById('cc-tab-3').classList.toggle('active', isTtsTab);
+    document.getElementById('cc-view-llm').style.display = isTtsTab ? 'none' : 'flex';
+    document.getElementById('cc-view-tts').style.display = isTtsTab ? 'flex' : 'none';
+
+    if (cOp > 0.01 && !isTtsTab) {
+      const profs = [
+        { url: 'https://api.siliconflow.cn/v1', proto: 'OpenAI 兼容 (/chat/completions)', model: 'deepseek-ai/DeepSeek-V3', cnt: 38 },
+        { url: 'https://openrouter.ai/api/v1', proto: 'OpenAI 兼容 (/chat/completions)', model: 'deepseek/deepseek-chat', cnt: 142 },
+        { url: 'http://127.0.0.1:11434/v1', proto: 'OpenAI 兼容（本机免 Key）', model: 'qwen2.5:14b-local', cnt: 12 },
+        { url: 'https://api.anthropic.com/v1', proto: 'Anthropic 兼容 (/messages)', model: 'claude-sonnet-4-5', cnt: 16 },
+      ];
+      const pi = time < 33.42 ? 0 : (time < 34.62 ? 2 : 3);
+      profs.forEach((_, i) => document.getElementById(`ccp-${i}`).classList.toggle('active', i === pi));
+      const cur = profs[pi];
+      document.getElementById('cc-url').textContent = cur.url;
+      document.getElementById('cc-proto').textContent = cur.proto;
+      document.getElementById('cc-model').textContent = cur.model;
+      document.getElementById('cc-stat').textContent = `✓ GET /models 200 OK · 已同步 ${cur.cnt} 个模型（换模型不换灵魂）`;
+      document.getElementById('cc-btn').style.transform = (time >= 35.80 && time <= 36.05) ? 'scale(0.95)' : 'scale(1)';
+    }
+    if (cOp > 0.01 && isTtsTab) drawWaveAcoustic(time - 38.0);
+
+    const winSetup = document.getElementById('z-win-setup');
+    const wOp = floatInterval(time, 43.95, 46.55, 0.35), wIn = easeOutExpo((time - 43.95) / 0.5);
+    winSetup.style.opacity = wOp.toFixed(3);
+    winSetup.style.transform = `translate3d(0, 0, ${(wOp * 64).toFixed(1)}px) scale(${lerp(0.95, 1, wIn).toFixed(3)})`;
+    if (wOp > 0.01) {
+      const wp = Math.min(100, Math.round(easeInOutCubic((time - 44.05) / 1.85) * 100));
+      document.getElementById('w-pct').textContent = `${wp}%`;
+      document.getElementById('w-bar').style.width = `${wp}%`;
+      document.getElementById('w-step').textContent =
+        wp < 55 ? '正在部署内置运行时与本地记忆引擎...' :
+        wp < 96 ? '正在创建桌面快捷方式与静默托盘服务...' :
+        '✓ 安装完成！所有回忆与声线已安全就绪';
+    }
+
+    const intro = document.getElementById('intro-title-overlay');
+    intro.style.opacity = floatInterval(time, 0.25, 4.10, 0.5).toFixed(3);
+    intro.style.transform = `translate3d(0, ${lerp(22, 0, easeOutExpo((time - 0.25) / 0.7)).toFixed(1)}px, 0)`;
+
+    const fin = document.getElementById('finale-overlay');
+    if (time >= 46.35) {
+      const fp = easeOutExpo((time - 46.35) / 0.65);
+      fin.style.opacity = clamp01(fp).toFixed(3);
+      fin.style.transform = `scale(${lerp(0.97, 1, fp).toFixed(4)})`;
+    } else fin.style.opacity = 0;
+
+    drawLensOverlay(time);
+  };
+
+  window.__DURATION__ = DURATION;
+  if (!window.__HEADLESS_RENDER__ && !window.__EXTERNAL_CLOCK__ && window.self === window.top) {
+    let start = null;
+    function loop(ts) {
+      if (start === null) start = ts;
+      window.__renderAt(((ts - start) / 1000) % DURATION);
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  }
+})();
+</script>
+</body>
+</html>

@@ -36,6 +36,34 @@
   }
 }
 
+/* Pad 竖屏（768px–1023px）：顶部带抽屉入口，中间优雅居中，避免内容贴顶或贴底 */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .container {
+    flex-direction: column;
+  }
+
+  .welcome {
+    flex: 1;
+    min-height: 0;
+    justify-content: center;
+    max-width: 720px;
+    padding: 0 28px 40px;
+  }
+}
+
+/* 手机横屏或键盘弹出等矮屏场景：收紧垂直间距避免遮挡输入框 */
+@media (max-height: 540px) {
+  .welcome {
+    padding-bottom: 12px;
+  }
+
+  .greeting {
+    margin: 8px 0 12px;
+    font-size: 18px;
+    line-height: 24px;
+  }
+}
+
 @media not all and (min-width: 768px) {
   .container {
     flex-direction: column;

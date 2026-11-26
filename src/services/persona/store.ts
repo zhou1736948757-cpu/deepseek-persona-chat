@@ -274,3 +274,22 @@ export const closeOnboarding = (markDone = true) => {
     ...(markDone ? { onboardingDone: true } : {}),
   })
 }
+
+/** 从 B站云存档恢复人格库（保留内置默认人格兜底）。 */
+export const replacePersonasFromCloud = (incoming: Persona[], activeId?: string) => {
+  const valid = incoming.filter(
+    (item): item is Persona =>
+      typeof item === 'object' &&
+      item !== null &&
+      typeof item.id === 'string' &&
+      typeof item.name === 'string'
+  )
+  const merged = valid.some((p) => p.id === 'builtin-deepseek')
+    ? valid
+    : [BUILTIN_PERSONAS[0], ...valid]
+  const nextActive =
+    activeId && merged.some((p) => p.id === activeId) ? activeId : merged[0].id
+  persistPersonas(merged)
+  writeStorage(STORAGE_KEYS.activeId, nextActive)
+  usePersonaStore.setState({ personas: merged, activePersonaId: nextActive })
+}

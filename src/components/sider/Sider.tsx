@@ -5,6 +5,7 @@ import { IconPanelLeftOutline16, IconSettingsOutline16, NewChatIcon } from '../b
 import { setSiderCollapsed, useSettings } from '../../services/settings.js'
 import { openOnboarding, openPersonaManager, usePersonaStore } from '../../services/persona/store.js'
 import { useProviderStore } from '../../services/providers/ourFreeModel.js'
+import { openToyCloudModal, useToyCloudStore } from '../../services/toy/toyCloudSync.js'
 import personaStyles from '../persona/Persona.module.css'
 import { groupSessions } from '../../services/chat/sessionGroups.js'
 import { newChat, removeSession, useChatStore } from '../../services/chat/store.js'
@@ -31,6 +32,11 @@ export const Sider = ({ mobile = false }: { mobile?: boolean }) => {
   const activeCustomName = useProviderStore((state) =>
     state.customProfiles.find((p) => p.id === state.activeCustomProfileId)?.name
   )
+  const toySdkAvailable = useToyCloudStore((state) => state.sdkAvailable)
+  const toyCloudSynced = useToyCloudStore((state) => Boolean(state.lastSyncedAt || state.remoteMeta))
+  const toyProfileName = useToyCloudStore((state) => state.profile?.nickname)
+  const showToyEntry =
+    (typeof __TOY_BUILD__ !== 'undefined' && __TOY_BUILD__) || toySdkAvailable
   const readyToChat = hasApiKey || chatProvider === 'ourfree' || chatProvider === 'custom'
   const [now, setNow] = useState(Date.now)
   const groups = useMemo(() => groupSessions(sessions, now, t), [sessions, now, t])
@@ -142,6 +148,19 @@ export const Sider = ({ mobile = false }: { mobile?: boolean }) => {
           </span>
           <span className={clsx(personaStyles.statusDot, readyToChat && personaStyles.statusDotOk)} />
         </button>
+        {showToyEntry ? (
+          <button
+            type="button"
+            className={personaStyles.siderGuideBtn}
+            onClick={() => {
+              openToyCloudModal()
+              closeMobileSider()
+            }}
+          >
+            <span>{toyProfileName ? `B站云存档 · ${toyProfileName}` : 'B站云存档 · 同步与分享'}</span>
+            <span className={clsx(personaStyles.statusDot, toyCloudSynced && personaStyles.statusDotOk)} />
+          </button>
+        ) : null}
         <button type="button" className={styles.settings} onClick={() => openSettings('general')}>
           <span className={styles.settingsIcon}>
             <IconSettingsOutline16 />

@@ -1,7 +1,12 @@
 import { useEffect } from 'react'
 import { useTranslate } from '../i18n/index.js'
 import { useSettings } from '../services/settings.js'
-import { useIsMobile, useMobileViewport, usePreventPageScroll } from './viewport.js'
+import {
+  useIsCompactSider,
+  useIsMobile,
+  useMobileViewport,
+  usePreventPageScroll,
+} from './viewport.js'
 import {
   bindChatPersistence,
   initChat,
@@ -17,8 +22,11 @@ import { Welcome } from '../components/session/Welcome.js'
 import { OnboardingWizard } from '../components/persona/OnboardingWizard.js'
 import { PersonaManagerModal } from '../components/persona/PersonaManagerModal.js'
 import { SettingsDialog } from '../components/settings/SettingsDialog.js'
+import { ToyCloudModal } from '../components/toy/ToyCloudModal.js'
 import { openOnboarding, usePersonaStore } from '../services/persona/store.js'
 import { initBuiltInOurFreeModel, useProviderStore } from '../services/providers/ourFreeModel.js'
+import { bindToySafeArea } from '../services/toy/bilibiliToy.js'
+import { initToyCloudEnvironment } from '../services/toy/toyCloudSync.js'
 import { Toast } from '../components/base/Toast.js'
 import { showToast } from '../components/base/toastState.js'
 import { onUploadNotice } from '../services/attachments.js'
@@ -32,9 +40,10 @@ import styles from './App.module.css'
 export const App = () => {
   const t = useTranslate()
   const isMobile = useIsMobile()
+  const isCompactSider = useIsCompactSider()
   const locale = useSettings((state) => state.locale)
-  // 移动端侧边栏以独立抽屉管理开合状态
-  const siderCollapsed = useSettings((state) => state.siderCollapsed) && !isMobile
+  // 手机与 Pad 竖屏（<1024px）以独立抽屉管理侧边栏开合状态
+  const siderCollapsed = useSettings((state) => state.siderCollapsed) && !isCompactSider
   const ready = useChatStore((state) => state.ready)
   const initError = useChatStore((state) => state.initError)
   const saveError = useChatStore((state) => Object.values(state.sessionSaveErrors).some(Boolean))
@@ -67,12 +76,14 @@ export const App = () => {
   useEffect(closeSearchPanel, [activeId])
   // 切换会话时停止朗读
   useEffect(stopReadAloud, [activeId])
-  // 移动端选中会话、切换布局后收起抽屉
-  useEffect(closeMobileSider, [activeId, isMobile])
+  // 移动端 / Pad 竖屏选中会话、切换布局后收起抽屉
+  useEffect(closeMobileSider, [activeId, isCompactSider])
 
   useEffect(() => {
+    const offSafeArea = bindToySafeArea()
     void initChat()
     void initBuiltInOurFreeModel()
+    void initToyCloudEnvironment()
     // 仅当用户切换到 DeepSeek 官方模式且未填 Key 时才自动弹出引导；默认内置 OurFreeModel 开箱即用
     const hasDsKey = Boolean(useSettings.getState().apiKey)
     const isOurFree = useProviderStore.getState().chatProvider === 'ourfree'
@@ -80,12 +91,13 @@ export const App = () => {
     if (!hasDsKey && !isOurFree && !done) {
       openOnboarding()
     }
+    return offSafeArea
   }, [])
 
   return (
     <>
       <div ref={frameRef} className={styles.frame}>
-        {isMobile ? <MobileSider /> : siderCollapsed ? null : <Sider />}
+        {isCompactSider ? <MobileSider /> : siderCollapsed ? null : <Sider />}
         <main className={styles.main}>
           {saveError ? (
             <div className={styles.saveError} role="alert">
@@ -104,7 +116,7 @@ export const App = () => {
             {siderCollapsed ? <CollapsedSider /> : null}
             {!ready || (activeId !== null && !session) ? (
               <div className={styles.loadingView}>
-                {isMobile ? <MobileHeader /> : null}
+                {isCompactSider ? <MobileHeader /> : null}
                 <div className={styles.loadingState} role="status" aria-live="polite">
                   <span>
                     {(!ready ? initError : sessionLoadError)
@@ -144,6 +156,7 @@ export const App = () => {
       <SettingsDialog />
       <PersonaManagerModal />
       <OnboardingWizard />
+      <ToyCloudModal />
       <Toast />
     </>
   )

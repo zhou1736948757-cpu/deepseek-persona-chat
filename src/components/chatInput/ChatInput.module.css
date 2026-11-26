@@ -333,6 +333,59 @@
   color: var(--dsw-alias-brand-text);
 }
 
+/* 触屏设备（手机 / Pad）不支持 hover，附件删除按钮默认常显便于点按 */
+@media (hover: none) {
+  .remove {
+    opacity: 0.92;
+    width: 22px;
+    height: 22px;
+  }
+}
+
+/* 小屏手机（<=480px）：收紧底部工具行间距，确保深度思考/低中高/搜索/语音/发送单行不溢出 */
+@media (max-width: 480px) {
+  .wrapper {
+    border-radius: 20px;
+  }
+
+  .functionRow {
+    gap: 6px;
+    padding: 8px 10px 10px;
+  }
+
+  .toggles {
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .toggles::-webkit-scrollbar {
+    display: none;
+  }
+
+  .toggle {
+    height: 32px;
+    padding: 0 9px;
+    font-size: 12px;
+  }
+
+  .effortGroup {
+    height: 32px;
+  }
+
+  .effortBtn {
+    height: 26px;
+    min-width: 24px;
+    padding: 0 6px;
+  }
+
+  .sendButton {
+    width: 32px;
+    height: 32px;
+    margin-left: 2px;
+  }
+}
+
 .right {
   display: flex;
   flex-shrink: 0;

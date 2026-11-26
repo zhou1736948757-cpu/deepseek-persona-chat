@@ -6,6 +6,7 @@ import { rspack, type Configuration } from '@rspack/core'
 import { createOfmMiddleware } from './scripts/ofm-bridge.mjs'
 
 const dev = process.env.NODE_ENV !== 'production'
+const toyBuild = process.env.TOY_BUILD === '1'
 const targets = ['chrome >= 105', 'edge >= 105', 'safari >= 16', 'firefox >= 110']
 const root = path.dirname(fileURLToPath(import.meta.url))
 const { version } = JSON.parse(
@@ -32,9 +33,9 @@ export const createConfig = ({
   mode: dev ? 'development' : 'production',
   entry: './src/main.tsx',
   output: {
-    path: path.resolve(root, 'dist'),
-    // 运行时按当前脚本地址推导资源路径，file:// 下异步 chunk、字体都按相对位置加载
-    publicPath: 'auto',
+    path: path.resolve(root, toyBuild ? 'dist-toy' : 'dist'),
+    // 运行时按当前脚本地址推导资源路径，B站 /toy/<slug>/ 与 file:// 下异步 chunk、字体都按相对位置加载
+    publicPath: toyBuild ? './' : 'auto',
     filename: 'static/js/[name].[contenthash:8].js',
     chunkFilename: 'static/js/async/[name].[contenthash:8].js',
     cssFilename: 'static/css/[name].[contenthash:8].css',
@@ -80,8 +81,16 @@ export const createConfig = ({
       template: './src/index.html',
       scriptLoading: 'defer',
       meta: { 'application-version': version },
+      templateParameters: {
+        toySdkTag: toyBuild
+          ? '\n    <script src="//s1.hdslb.com/bfs/seed/toy/app/sdk/toy-sdk.js"></script>'
+          : '',
+      },
     }),
-    new rspack.DefinePlugin({ __API_ORIGIN__: JSON.stringify(apiOrigin) }),
+    new rspack.DefinePlugin({
+      __API_ORIGIN__: JSON.stringify(apiOrigin),
+      __TOY_BUILD__: JSON.stringify(toyBuild),
+    }),
     new rspack.CopyRspackPlugin({
       patterns: [{ from: path.resolve(root, 'LICENSE'), to: 'LICENSE', toType: 'file' }],
     }),

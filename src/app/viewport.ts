@@ -1,14 +1,24 @@
 import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from 'react'
 
-/** 窄于 768px 按移动端布局 */
-const query = window.matchMedia('not all and (min-width: 768px)')
+/** 窄于 768px 按手机端布局 */
+const mobileQuery = window.matchMedia('not all and (min-width: 768px)')
+/** 窄于 1024px（手机 + Pad 竖屏）采用抽屉式侧边栏，避免挤压主对话区 */
+const compactSiderQuery = window.matchMedia('not all and (min-width: 1024px)')
 
-const subscribe = (onChange: () => void) => {
-  query.addEventListener('change', onChange)
-  return () => query.removeEventListener('change', onChange)
+const subscribeMobile = (onChange: () => void) => {
+  mobileQuery.addEventListener('change', onChange)
+  return () => mobileQuery.removeEventListener('change', onChange)
 }
 
-export const useIsMobile = () => useSyncExternalStore(subscribe, () => query.matches)
+const subscribeCompactSider = (onChange: () => void) => {
+  compactSiderQuery.addEventListener('change', onChange)
+  return () => compactSiderQuery.removeEventListener('change', onChange)
+}
+
+export const useIsMobile = () => useSyncExternalStore(subscribeMobile, () => mobileQuery.matches)
+
+export const useIsCompactSider = () =>
+  useSyncExternalStore(subscribeCompactSider, () => compactSiderQuery.matches)
 
 const preventPageScroll = (event: TouchEvent) => {
   if (event.touches.length !== 1) {

@@ -8,6 +8,9 @@ declare module '*.css' {}
 /** 公开 API 的地址，见 rspack.config.ts 的 createConfig */
 declare const __API_ORIGIN__: string
 
+/** 是否为 B站 Toy 静态打包模式（无本机 Node 桥接服务） */
+declare const __TOY_BUILD__: boolean
+
 /** Prism 语言包通过副作用注册到全局 Prism */
 declare module 'prismjs/components/*' {}
 

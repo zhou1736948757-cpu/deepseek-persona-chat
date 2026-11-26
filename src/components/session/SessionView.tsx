@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { useIsMobile } from '../../app/viewport.js'
+import { useIsCompactSider } from '../../app/viewport.js'
 import { useTranslate } from '../../i18n/index.js'
 import { openPersonaManager, usePersonaStore } from '../../services/persona/store.js'
 import type { Session } from '../../services/chat/types.js'
@@ -20,14 +20,14 @@ export const SessionView = ({
   siderCollapsed: boolean
 }) => {
   const t = useTranslate()
-  const isMobile = useIsMobile()
+  const isCompactSider = useIsCompactSider()
   const personas = usePersonaStore((s) => s.personas)
   const activePersonaId = usePersonaStore((s) => s.activePersonaId)
   const activePersona = personas.find((p) => p.id === activePersonaId) ?? personas[0]
   const title = session.title || t('untitledChat')
   return (
     <div className={styles.view}>
-      {isMobile ? (
+      {isCompactSider ? (
         <MobileHeader title={title} />
       ) : (
         <div className={styles.header}>

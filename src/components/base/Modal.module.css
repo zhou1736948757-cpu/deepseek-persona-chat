@@ -66,3 +66,14 @@
   gap: 8px;
   margin-top: 20px;
 }
+
+@media (max-width: 767px) {
+  .overlay {
+    align-items: flex-end;
+  }
+
+  .content {
+    max-width: 100vw;
+    padding: 18px 16px calc(18px + max(var(--toy-safe-bottom, 0px), env(safe-area-inset-bottom, 0px)));
+  }
+}

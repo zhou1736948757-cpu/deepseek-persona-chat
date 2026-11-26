@@ -4,6 +4,11 @@
   display: flex;
   overflow: hidden;
   background-color: var(--dsw-alias-bg-base);
+  padding-top: max(var(--toy-safe-top, 0px), env(safe-area-inset-top, 0px));
+  padding-bottom: max(var(--toy-safe-bottom, 0px), env(safe-area-inset-bottom, 0px));
+  padding-left: max(var(--toy-safe-left, 0px), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--toy-safe-right, 0px), env(safe-area-inset-right, 0px));
+  box-sizing: border-box;
 }
 
 .main {
